@@ -2,8 +2,10 @@
 title: "Raport"
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
-output: html_document
-editor_options: 
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
   chunk_output_type: console
 ---
 
@@ -15,20 +17,246 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 
 ### Opis firmy
 
-mniam mniamn
+McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejmuje ona ponad 30 tys. restauracji, każdego dnia obsługujących ponad 46 mln osób w 119 krajach. Wartość marki McDonald's szacuje się na 24,7 mld dolarów.
 
 ### Wczytanie danych i rysunki
 
+Na początek wczytujemy bibliotekę `tseries`, która będzie nam potrzebna do wykonania analizy szeregu czasowego.
+
 ```{r}
 library(tseries)
+```
+
+Dane pobieramy z `yahoo finance` za pomocą funkcji `get.hist.quote` i zamieniamy na typ numeryczny.
+
+```{r}
 mcd<- get.hist.quote(instrument = "MCD", provider = "yahoo",
                           quote = "Close", start = "2018-01-01", end = "2019-12-31")
 mcd <- as.numeric(mcd)
 ```
 
+Rysunek przedstawiający notowania firmy McDOnald's od 01-01-2018 do 31-12-2019
 
 ```{r}
-plot(mcd, type = "l")
+plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's")
 ```
  
-Trend rosnący?
+Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
+
+### Dopasowanie wielomianu
+
+Spróbujemy do danych dopasować wielomian stopnia 1, 2 i 3.
+
+
+```{r}
+t <- 1:length(mcd)
+```
+
+#### Model liniowy
+
+```{r}
+
+mod1 <- lm(mcd~t)
+summary(mod1)
+```
+
+Zarówno wyraz wolny, jak i współczynnik kierunkowy są istotne statystycznie. $R^2$ wynosi około 74%.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(mcd, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
+abline(mod1, col = "red")
+plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
+abline(h=0)
+par(mfrow = c(1, 1))
+```
+
+#### Model kwadratowy
+
+Teraz stworzymy model kwadratowy.
+
+```{r}
+mod2 <- lm(mcd~t+I(t^2))
+summary(mod2)
+```
+
+Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 75%, a więc zmieniło się bardzo nieznacznie.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(mcd, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
+lines(t, mod2$fitted.values, col = "red", )
+plot(mod2$residuals, type = "l", main = "Reszty modelu kwadratowego", xlab = "czas", ylab = "reszty")
+abline(h = 0)
+par(mfrow = c(1, 1))
+```
+
+Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
+
+#### Model sześcienny
+
+
+
+```{r}
+mod3 <- lm(mcd~t+I(t^2)+I(t^3))
+summary(mod3)
+```
+
+W modelu sześciennym wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi 90%, a więc znacząco się poprawił w stosunku do poprzednich dwóch modeli.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(mcd, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
+lines(t, mod3$fitted.values, col = "red")
+plot(mod3$residuals, type = "l", main = "Reszty modelu sześciennego", xlab = "czas", ylab = "reszty")
+abline(h= 0)
+
+```
+
+Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
+
+### Ruchoma średnia
+
+```{r}
+ruchoma <- function(x, m, kolor){
+  t <- length(x)
+  f <- NULL
+  for(i in (m+1):t){
+    f[i] <- mean(x[(i-m):i])
+  }
+  plot(x, type = "l")
+  lines((m+1):t, f[(m+1):t], lwd = 2, col = kolor)
+}
+```
+
+```{r}
+ruchoma(mcd, 3, "red")
+```
+
+```{r}
+ruchoma(mcd, 10, "green")
+```
+
+```{r}
+ruchoma(mcd, 30, "blue")
+```
+
+### Metoda wykładniczych wag ruchomej średniej
+
+```{r}
+wykladnicza <- function(x, mi, kolor){
+  f <- NULL
+  f[1] <- x[1]
+  
+  for (i in 2:length(x)){
+    f[i] <- (1-mi)/(1-mi^i)*(x[i]+mi*(1-mi^(i-1))/(1-mi)*f[i-1])
+  }
+  plot(x, type = "l")
+  lines(1:length(x), f, lwd = 2, col = kolor)
+}
+```
+
+```{r}
+wykladnicza(mcd, 0.2, "red")
+```
+
+```{r}
+wykladnicza(mcd, 0.5, "green")
+
+```
+```{r}
+wykladnicza(mcd, 0.7, "blue")
+```
+
+```{r}
+wykladnicza(mcd, 0.9, "yellow")
+```
+
+### Testy na resztach modelu
+
+(Najlepiej dopasowany wydawał się model z trzecią potęgą)
+
+```{r}
+library(randtests)
+runs.test(mod3$residuals, threshold = 0, plot = T)
+```
+P-value bliskie zero, odrzucamy hipotezę o losowości reszt
+
+Wykresy normalności
+
+```{r}
+plot(density(mod3$residuals))
+curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
+```
+```{r}
+qqnorm(mod3$residuals)
+qqline(mod3$residuals, col=2, lwd = 3)
+```
+```{r}
+plot(ecdf(mod3$residuals))
+curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
+```
+```{r}
+library(nortest)
+ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
+lillie.test(mod3$residuals)
+shapiro.test(mod3$residuals)
+ad.test(mod3$residuals)
+```
+Badanie autokorelacji
+
+```{r}
+acf(mod3$residuals)
+```
+
+
+### Metoda różnicowa
+
+```{r}
+par(mfrow = c(2, 3))
+for(i in 1:6){
+plot(diff(mcd, differences = i), type = "l")
+abline(h = 0)}
+par(mfrow=c(1,1))
+```
+
+### Stacjonarność
+```{r}
+adf.test(mcd) #niest
+kpss.test(mcd) #niest
+kpss.test(mcd, null = "Trend") #niest
+```
+
+```{r}
+library(forecast)
+auto.arima(mcd)
+```
+
+
+### Inne rzeczy
+
+Trend
+
+W środowisku R dostępne są także funkcje dotyczące filtrowania szeregów czasowych. Jest to takie przekształcenie danych które doprowadza do oczyszczenia szeregu czasowego z wahań periodycznych. W środowisku R dostępnych jest kilka takich filtrów. Jeden z bardzie popularnych to filtr Hodrick-Prescotta zaimplementowany w pakiecie FRAPO::trdhp. Stosując filtr HP należy pamiętać o odpowiednim doborze parametru  
+λ
+ . Hodrick oraz Prescott zalecają, aby wartość współczynnika  
+λ
+  była równa 400, 1600 i 14400 odpowiednio dla danych rocznych, kwartalnych i miesięcznych.
+  
+  (P. Biecek Na przełaj przez Data Mining)
+  
+```{r}
+library(FRAPO)
+f <- FRAPO::trdhp(mcd, 14400)
+plot(mcd, type = "l")
+lines(f, col = 2)
+plot(mcd - f, type = "l")
+
+
+```
+
+
+
+
+
+
