@@ -1,0 +1,211 @@
+---
+title: "Testowanie"
+author: ""
+date: "4 stycznia 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=F, warning=F)
+```
+
+## Starbucks
+
+```{r}
+library(tseries)
+sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
+                          quote = "Close", start = "2018-01-01", end = "2019-12-31")
+sbux<- as.numeric(sbux)
+```
+
+```{r}
+plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks")
+```
+
+Widać trend rosnący.
+
+### Dopasowanie wielomianu
+
+```{r}
+t <- 1:length(sbux)
+```
+
+#### Model liniowy
+```{r}
+mod1 <- lm(sbux~t)
+summary(mod1)
+```
+
+Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 79%.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
+abline(mod1, col = "red")
+plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
+abline(h=0)
+par(mfrow = c(1, 1))
+```
+
+#### Model kwadratowy
+```{r}
+mod2 <- lm(sbux~t+I(t^2))
+summary(mod2)
+```
+
+Współczynnik przy t jest nieistotny statystycznie, ale $R^2$ poprawiło się - wynosi teraz około 83%.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
+lines(t, mod2$fitted.values, col = "red")
+plot(mod2$residuals, type = "l", main = "Reszty modelu kwadratowego", xlab = "czas", ylab = "reszty")
+abline(h = 0)
+par(mfrow = c(1, 1))
+```
+
+#### Model sześcienny
+```{r}
+mod3 <- lm(sbux~t+I(t^2)+I(t^3))
+summary(mod3)
+```
+
+Wszystkie współczynniki są istotne statystycznie, a $R^2$ znów wzrosło - wynosi około 92% (znaczna poprawa).
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
+lines(t, mod3$fitted.values, col = "red")
+plot(mod3$residuals, type = "l", main = "Reszty modelu sześciennego", xlab = "czas", ylab = "reszty")
+abline(h= 0)
+par(mfrow=c(1,1))
+```
+
+Reszty modelu sześciennego mają mniejszy rozrzut niż w poprzednich przypadkach.
+
+### Ruchoma średnia
+
+```{r}
+ruchoma <- function(x, m, kolor){
+  t <- length(x)
+  f <- NULL
+  for(i in (m+1):t){
+    f[i] <- mean(x[(i-m):i])
+  }
+  plot(x, type = "l")
+  lines((m+1):t, f[(m+1):t], lwd = 2, col = kolor)
+}
+```
+
+```{r}
+ruchoma(sbux, 3, "red")
+```
+
+```{r}
+ruchoma(sbux, 10, "green")
+```
+
+```{r}
+ruchoma(sbux, 30, "blue")
+```
+
+### Metoda wykładniczych wag ruchomej średniej
+
+```{r}
+wykladnicza <- function(x, mi, kolor){
+  f <- NULL
+  f[1] <- x[1]
+  
+  for (i in 2:length(x)){
+    f[i] <- (1-mi)/(1-mi^i)*(x[i]+mi*(1-mi^(i-1))/(1-mi)*f[i-1])
+  }
+  plot(x, type = "l")
+  lines(1:length(x), f, lwd = 2, col = kolor)
+}
+```
+
+```{r}
+wykladnicza(sbux, 0.2, "red")
+```
+
+```{r}
+wykladnicza(sbux, 0.5, "green")
+
+```
+```{r}
+wykladnicza(sbux, 0.7, "blue")
+```
+
+```{r}
+wykladnicza(sbux, 0.9, "yellow")
+```
+
+### Testy na resztach modelu sześciennego
+
+```{r}
+library(randtests)
+runs.test(mod3$residuals, threshold = 0, plot = T)
+```
+Odrzucamy hipotezę zerową o losowości reszt
+
+Wykresy normalności
+
+```{r}
+plot(density(mod3$residuals))
+curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
+```
+```{r}
+qqnorm(mod3$residuals)
+qqline(mod3$residuals, col=2, lwd = 3)
+```
+```{r}
+plot(ecdf(mod3$residuals))
+curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
+```
+```{r}
+library(nortest)
+ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
+lillie.test(mod3$residuals) #odrzucamy normalność
+shapiro.test(mod3$residuals) #odrzucamy normalność
+ad.test(mod3$residuals)
+```
+
+Badanie autokorelacji
+
+```{r}
+acf(mod3$residuals)
+```
+
+### Metoda różnicowa
+
+```{r}
+par(mfrow = c(2, 3))
+for(i in 1:6){
+plot(diff(sbux, differences = i), type = "l")
+abline(h = 0)}
+par(mfrow=c(1,1))
+```
+
+### Stacjonarność
+```{r}
+adf.test(sbux) #niest
+kpss.test(sbux) #niest
+kpss.test(sbux, null = "Trend") #niest
+```
+
+```{r}
+library(forecast)
+auto.arima(sbux)
+```
+
+### Inne rzeczy
+  
+```{r}
+library(FRAPO)
+f <- FRAPO::trdhp(sbux, 14400)
+plot(sbux, type = "l")
+lines(f, col = 2)
+plot(sbux - f, type = "l")
+```
