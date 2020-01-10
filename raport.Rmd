@@ -13,6 +13,8 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
+
+
 ## McDonald's
 
 ### Opis firmy
@@ -116,6 +118,7 @@ abline(h= 0)
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
 ### Ruchoma średnia
+
 
 ```{r}
 ruchoma <- function(x, m, kolor){
@@ -257,6 +260,19 @@ plot(mcd - f, type = "l")
 
 
 
+### Sezonowość
 
+```{r}
+mcd_sez <- ts(mcd, frequency = 12)
+mcd_dek <- decompose(mcd_sez)
+forecast:: ggseasonplot(mcd_sez)
+forecast::ggseasonplot(mcd_sez, polar = T)
+trend <- dek$trend
+sezon <- dek$seasonal
+reszty <- dek$random
+plot(cbind(trend, sezon, reszty))
+plot(stl(mcd_sez, "periodic"))
+```
 
+Chyba McDonalds jest jakiś super sezonowy, bo wszystko idealnie wygląda na wykresach... ;p
 
