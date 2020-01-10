@@ -276,3 +276,23 @@ plot(stl(mcd_sez, "periodic"))
 
 Chyba McDonalds jest jakiś super sezonowy, bo wszystko idealnie wygląda na wykresach... ;p
 
+To skoro ten model wygląda najlepiej, to chyba dla jego reszt trzeba by testować... ?
+
+```{r}
+plot(reszty)
+abline(h=0)
+```
+
+
+```{r}
+shapiro.test(reszty) #ohohoo malutkie p value
+library(lmtest)
+qqnorm(reszty)
+qqline(reszty, col = 2)
+#nie ma normalności!!
+```
+
+```{r}
+acf(reszty, na.action = na.pass) #dla dalszych z grubsza się mieszczą w pasku
+```
+
