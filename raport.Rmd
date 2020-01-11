@@ -3,6 +3,7 @@ title: "Raport"
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
+
   html_document: 
     toc: true
     toc_depth: 4
@@ -15,7 +16,9 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
+## Wstęp
 
+W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's oraz Starbucks z okresu dwóch lat (od początku 2018 do końca 2019). Na potrzeby oceny w raporcie pojawia się nie tylko sama analiza, ale też wszystkie polecenia w języku `R`, jakich używaliśmy w jej celu.
 
 ## McDonald's
 
@@ -39,7 +42,7 @@ mcd<- get.hist.quote(instrument = "MCD", provider = "yahoo",
 mcd <- as.numeric(mcd)
 ```
 
-Rysunek przedstawiający notowania firmy McDOnald's od 01-01-2018 do 31-12-2019
+Wykonamy rysunek przedstawiający notowania firmy McDonald's od 01-01-2018 do 31-12-2019
 
 ```{r}
 plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's")
@@ -119,11 +122,28 @@ abline(h= 0)
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
+#### Model z czwartą potęgą
+
+```{r}
+mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
+summary(mod4)
+```
+
+```{r}
+par(mfrow = c(1, 2))
+plot(mcd, type = "l", main = "Model z czwartą potęgą", xlab = "czas", ylab = "USD")
+lines(t, mod4$fitted.values, col = "red")
+plot(mod3$residuals, type = "l", main = "Reszty modelu z czwartą potęgą", xlab = "czas", ylab = "reszty")
+abline(h= 0)
+```
+
+W modelu z czwartą potęgą współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu sześciennego. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model sześcienny.
+
 ### Testy jednorodności wariancji reszt
 
 Aby zbadać czy reszty w modelu są homoskedastyczne posłużymy się kilkoma popularnymi testami.
 
-Test Breuscha-Pagana
+#### Test Breuscha-Pagana
 
 $H_0:$ jednorodność wariancji reszt.
 $H_1:$ wariancja reszt zależy od zmiennych objaśniających w modelu 
@@ -135,7 +155,7 @@ pv1 <- bptest(mod3)$p.value
 
 P-value wynosi `r sprintf("%.10f",pv1)`, należałoby zatem odrzucić hipotezę o jednorodności wariancji reszt.
 
-Test Goldfelda-Quandta
+#### Test Goldfelda-Quandta
 
 Weryfikacja hipotezy polega na podziale danych na dwie grupy i sprawdzeniu, czy w obu wariancja ma taką samą wartość.
 
@@ -145,7 +165,7 @@ pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 
 P-value wynosi `r sprintf("%.3f", pv2)`, zatem nie ma podstaw do odrzucenia hipotezy o równości wariancji.
 
-Test Harrisona-McCabe'a
+#### Test Harrisona-McCabe'a
 
 Sprawdza hipotezę podobną do tej, którą weryfikuje test Goldfelda-Quandta; jednak w tym przypadku porównuje pierwszą połowę wartości do całości danych.
 
@@ -159,6 +179,13 @@ Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzec
 
 ### Ruchoma średnia
 
+Wykorzystamy metody ruchomych średnich, aby wygładzić szereg i zaobserwować ogólne trendy. Metoda średniej ruchomej ma na celu zmniejszenie rozrzutu razy $m+1$. 
+
+W metodzie średniej ruchomej estymator części deterministycznej ma postać
+
+$$\hat{f}(t) = \frac{1}{m+1}\sum_{k = 0}^{m}x_{t-k}$$
+
+Do wykonania wygładzonych wykresów napisaliśmy funkcję `ruchoma`, której argumentami są `x` - szereg czasowy, `m` - paramter metody średniej ruchomej, `kolor` - kolor, na jaki dorysujemy wygładzoną linię na wykresie.
 
 ```{r}
 ruchoma <- function(x, m, kolor){
@@ -172,19 +199,42 @@ ruchoma <- function(x, m, kolor){
 }
 ```
 
+Narysujemy wykresy dla kilku parametrów `m`.
+
+Dla `m` = 3:
+
 ```{r}
 ruchoma(mcd, 3, "red")
 ```
+
+Dla `m` = 10:
 
 ```{r}
 ruchoma(mcd, 10, "green")
 ```
 
+Dla `m` = 30:
+
 ```{r}
 ruchoma(mcd, 30, "blue")
 ```
 
+Jak widać, im większy parametr `m` przyjmiemy, tym bardziej wygładzony wykres uzyskujemy, ale też mniej dokładny.
+
+
 ### Metoda wykładniczych wag ruchomej średniej
+
+W metodzie ruchomej średniej obserwacje starsze i nowsze mają taką samą wagę, dlatego ta metoda jest mało dokładna. Skorzystamy teraz z dokładniejszej metody wykładniczych wag ruchomej średniej.
+
+W tej metodzie estymator części deterministycznej ma postać:
+
+$$\hat{f}(t) = \frac{1 - \eta}{1-\eta^t}\sum_{k = 0}^{t-1}\eta^kx_{t-k}$$
+
+gdzie $\eta \in (0, 1)$
+
+Skorzystamy z postaci rekurencyjnej:
+
+$$\hat{f}(t)=\frac{1- \eta}{1 - \eta^t}\left[x_t+ \eta \frac{1 - \eta^{t-1}}{1 - \eta} \hat{f}(t-1) \right]$$
 
 ```{r}
 wykladnicza <- function(x, mi, kolor){
@@ -199,17 +249,27 @@ wykladnicza <- function(x, mi, kolor){
 }
 ```
 
+Dla $\eta = 0.2$
+
+
 ```{r}
 wykladnicza(mcd, 0.2, "red")
 ```
+
+Dla $\eta = 0.5$
 
 ```{r}
 wykladnicza(mcd, 0.5, "green")
 
 ```
+
+Dla $\eta = 0.7$
+
 ```{r}
 wykladnicza(mcd, 0.7, "blue")
 ```
+
+Dla $\eta = 0.9$
 
 ```{r}
 wykladnicza(mcd, 0.9, "yellow")
