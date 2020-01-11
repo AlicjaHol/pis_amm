@@ -117,6 +117,44 @@ abline(h= 0)
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
+### Testy jednorodności wariancji reszt
+
+Aby zbadać czy reszty w modelu są homoskedastyczne posłużymy się kilkoma popularnymi testami.
+
+Test Breuscha-Pagana
+
+$H_0:$ jednorodność wariancji reszt.
+$H_1:$ wariancja reszt zależy od zmiennych objaśniających w modelu 
+
+```{r}
+library(lmtest)
+pv1 <- bptest(mod3)$p.value
+```
+
+P-value wynosi `r sprintf("%.10f",pv1)`, należałoby zatem odrzucić hipotezę o jednorodności wariancji reszt.
+
+Test Goldfelda-Quandta
+
+Weryfikacja hipotezy polega na podziale danych na dwie grupy i sprawdzeniu, czy w obu wariancja ma taką samą wartość.
+
+```{r}
+pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
+```
+
+P-value wynosi `r sprintf("%.3f", pv2)`, zatem nie ma podstaw do odrzucenia hipotezy o równości wariancji.
+
+Test Harrisona-McCabe'a
+
+Sprawdza hipotezę podobną do tej, którą weryfikuje test Goldfelda-Quandta; jednak w tym przypadku porównuje pierwszą połowę wartości do całości danych.
+
+```{r}
+hmctest(mod3, order.by = ~fitted(mod3))
+pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
+```
+P-value wynosi jest praktycznie równe 0, należy przyjąć hipotezę alternatywną, czyli wariancja reszt modelu ulega zmianie.
+
+Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzeciego stopnia są heteroskedastyczne.
+
 ### Ruchoma średnia
 
 
@@ -212,7 +250,6 @@ Badanie autokorelacji
 acf(mod3$residuals)
 ```
 
-
 ### Metoda różnicowa
 
 ```{r}
@@ -267,9 +304,9 @@ mcd_sez <- ts(mcd, frequency = 12)
 mcd_dek <- decompose(mcd_sez)
 forecast:: ggseasonplot(mcd_sez)
 forecast::ggseasonplot(mcd_sez, polar = T)
-trend <- dek$trend
-sezon <- dek$seasonal
-reszty <- dek$random
+trend <- mcd_dek$trend
+sezon <- mcd_dek$seasonal
+reszty <- mcd_dek$random
 plot(cbind(trend, sezon, reszty))
 plot(stl(mcd_sez, "periodic"))
 ```
