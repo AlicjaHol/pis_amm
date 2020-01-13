@@ -275,42 +275,66 @@ Dla $\eta = 0.9$
 wykladnicza(mcd, 0.9, "yellow")
 ```
 
+Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność.
+
 ### Testy na resztach modelu
 
-(Najlepiej dopasowany wydawał się model z trzecią potęgą)
+Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz sprawdzimy, czy reszty tego modelu spełniają założenia:
+
+- losowość
+
+- jednorodność wariancji
+
+-normalność
+
+- brak autokorelacji
+
+#### Losowość
 
 ```{r}
 library(randtests)
 runs.test(mod3$residuals, threshold = 0, plot = T)
 ```
-P-value bliskie zero, odrzucamy hipotezę o losowości reszt
+P-value bliskie zero, odrzucamy hipotezę o losowości reszt.
 
-Wykresy normalności
+#### Normalność
 
 ```{r}
-plot(density(mod3$residuals))
+plot(density(mod3$residuals), main = "Wykres gęstości rozkładu reszt w porównaniu z rozkładem normalnym")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 ```
+
 ```{r}
-qqnorm(mod3$residuals)
+qqnorm(mod3$residuals, main = "Wykres z linią kwantylową")
 qqline(mod3$residuals, col=2, lwd = 3)
 ```
+
 ```{r}
-plot(ecdf(mod3$residuals))
+plot(ecdf(mod3$residuals), main = "Dystrybuanta empiryczna w porównaniu z rozkładem normalnym")
 curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 ```
+
 ```{r}
 library(nortest)
 ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
 lillie.test(mod3$residuals)
 shapiro.test(mod3$residuals)
 ad.test(mod3$residuals)
+
 ```
-Badanie autokorelacji
+
+Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podtsaw do odrzucenia, p-value około 0.14). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
+
+#### Autokorelacja
 
 ```{r}
 acf(mod3$residuals)
 ```
+
+Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
+
+
+
 
 ### Metoda różnicowa
 
@@ -323,11 +347,17 @@ par(mfrow=c(1,1))
 ```
 
 ### Stacjonarność
+
 ```{r}
 adf.test(mcd) #niest
 kpss.test(mcd) #niest
 kpss.test(mcd, null = "Trend") #niest
+adf.test(diff(mcd, differences = 1)) #stacj
+kpss.test(diff(mcd, differences = 1)) #stacj
+kpss.test(diff(mcd, differences = 1), null = "Trend") #stacj
 ```
+
+Szereg jest niestacjonarny, i niestacjonarny względem trendu. Po zróżnicowaniu 1 raz, jest zarówno stacjonarny, jak i TS (Trend Stationary).
 
 ```{r}
 library(forecast)
@@ -403,3 +433,12 @@ Dobra, ogólnie tutaj nie wiem jak to zrobić, czy nasz w końcu ma tę sezonowo
 Arima(reszty, order = c(12,0,2)) #tu AIC jakoś 1842, jak sie leci z p do gory, to coraz lepiej, ale tez nie wiem co tu robic w ogóle
 ```
 
+### Holt - Winters
+
+```{r}
+mcd_hw <- HoltWinters(mcd_sez, seasonal = "additive")
+pred <- predict(mcd_hw, n.ahead = 4*12, prediction.interval = T, level = 0.9)
+plot(mcd_hw, pred)
+```
+
+Predykcja za pomocą metody Holta-Wintersa. Testując dla różnej liczby okresów naprzód, widzimy, że przedział ufności drastycznie się rozszerza im większe `n.ahead`.
