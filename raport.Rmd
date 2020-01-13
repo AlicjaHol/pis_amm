@@ -1,5 +1,5 @@
 ---
-title: "Raport"
+title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz Starbucks"
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
@@ -25,6 +25,8 @@ W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's or
 ### Opis firmy
 
 McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejmuje ona ponad 30 tys. restauracji, każdego dnia obsługujących ponad 46 mln osób w 119 krajach. Wartość marki McDonald's szacuje się na 24,7 mld dolarów.
+
+![Jedzenie z McDonald's](mcd_logo.jpg)
 
 ### Wczytanie danych i rysunki
 
@@ -442,3 +444,271 @@ plot(mcd_hw, pred)
 ```
 
 Predykcja za pomocą metody Holta-Wintersa. Testując dla różnej liczby okresów naprzód, widzimy, że przedział ufności drastycznie się rozszerza im większe `n.ahead`.
+
+
+## Starbucks
+
+### Opis firmy
+
+Starbucks Corporation – największa na świecie sieć kawiarni. Została założona 30 marca 1971 w Seattle w stanie Waszyngton.
+
+![Kawa ze Starbucks](sbux_logo.jpg)
+
+Kawa ze Starbucks jest znana z tego, że pojawiła się jako błąd w jednym z odcinków Gry o tron.
+
+![Starbucks jest tak popularny, że piją go nawet w fantasy, które dzieje się w średniowieczu!](gra-o-tron-starbucks.jpg)
+
+Kawiarnia jest znana z tego, że każdy kubek jest podpisany imieniem zamawiającego. Urocze!
+
+
+![hehe](sbux_name.jpg)
+
+
+Podobno kawa w Starbucksie jest droższa niż paliwo w Polsce!!!!
+![ach ta akcyza](Starbucks-Gas.jpg)
+
+### Wczytanie danych
+
+
+```{r}
+sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
+                          quote = "Close", start = "2018-01-01", end = "2019-12-31")
+sbux<- as.numeric(sbux)
+```
+
+### Rysunek
+
+
+```{r}
+plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks")
+```
+
+Widać trend rosnący.
+
+### Dopasowanie wielomianu
+
+```{r}
+t <- 1:length(sbux)
+```
+
+#### Model liniowy
+```{r}
+mod1 <- lm(sbux~t)
+summary(mod1)
+```
+
+Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 79%.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
+abline(mod1, col = "red")
+plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
+abline(h=0)
+par(mfrow = c(1, 1))
+```
+
+
+Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie niedoszacowuje, na koniec znowu przeszacowuje.
+
+#### Model kwadratowy
+```{r}
+mod2 <- lm(sbux~t+I(t^2))
+summary(mod2)
+```
+
+Współczynnik przy t jest nieistotny statystycznie (p-value około 0.08, więc decyzja niejednoznaczna), ale $R^2$ poprawiło się - wynosi teraz około 83%.
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
+lines(t, mod2$fitted.values, col = "red")
+plot(mod2$residuals, type = "l", main = "Reszty modelu kwadratowego", xlab = "czas", ylab = "reszty")
+abline(h = 0)
+par(mfrow = c(1, 1))
+```
+
+Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
+
+#### Model sześcienny
+```{r}
+mod3 <- lm(sbux~t+I(t^2)+I(t^3))
+summary(mod3)
+```
+
+Wszystkie współczynniki są istotne statystycznie, a $R^2$ znów wzrosło - wynosi około 92% (znaczna poprawa).
+
+```{r}
+par(mfrow = c(1, 2))
+plot(sbux, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
+lines(t, mod3$fitted.values, col = "red")
+plot(mod3$residuals, type = "l", main = "Reszty modelu sześciennego", xlab = "czas", ylab = "reszty")
+abline(h= 0)
+par(mfrow=c(1,1))
+```
+
+Reszty modelu sześciennego mają mniejszy rozrzut niż w poprzednich przypadkach (od około -5 do 10).
+
+### Ruchoma średnia
+
+
+```{r}
+ruchoma(sbux, 3, "red")
+```
+
+```{r}
+ruchoma(sbux, 10, "green")
+```
+
+```{r}
+ruchoma(sbux, 30, "blue")
+```
+
+### Metoda wykładniczych wag ruchomej średniej
+
+
+```{r}
+wykladnicza(sbux, 0.2, "red")
+```
+
+```{r}
+wykladnicza(sbux, 0.5, "green")
+
+```
+
+```{r}
+wykladnicza(sbux, 0.7, "blue")
+```
+
+```{r}
+wykladnicza(sbux, 0.9, "yellow")
+```
+
+### Testy na resztach modelu sześciennego
+
+```{r}
+runs.test(mod3$residuals, threshold = 0, plot = T)
+```
+P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt
+
+Wykresy normalności
+
+```{r}
+plot(density(mod3$residuals))
+curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
+
+```
+
+Wykres gęstości empirycznej znacząco różni się od gęstości rozkładu normalnego. Bardzo znacząco.
+
+```{r}
+qqnorm(mod3$residuals)
+qqline(mod3$residuals, col=2, lwd = 3)
+```
+
+Tutaj także wyraźne odchyłki.
+
+```{r}
+plot(ecdf(mod3$residuals))
+curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
+```
+
+Nawet na dystrybuancie widać, że rozkład normalny wygląda inaczej.
+
+```{r}
+ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
+lillie.test(mod3$residuals) 
+shapiro.test(mod3$residuals) 
+ad.test(mod3$residuals)
+```
+
+W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipotezę o rozkładzie normalnym.
+
+Badanie autokorelacji
+
+```{r}
+acf(mod3$residuals)
+```
+
+Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce autokorelacja.
+
+### Metoda różnicowa
+
+```{r}
+par(mfrow = c(3, 3))
+for(i in 1:9){
+plot(diff(sbux, differences = i), type = "l")
+abline(h = 0)}
+par(mfrow=c(1,1))
+```
+
+Z wykresów widać, że największa stabilizacja jest przy różnicowaniu rzędu 2 lub 3, potem rozrzut zaczyna się znacząco zwiększać.
+
+### Stacjonarność
+```{r}
+adf.test(sbux) #niest
+kpss.test(sbux) #niest
+kpss.test(sbux, null = "Trend") #niest
+
+```
+
+Szereg nie jest ani stacjonarny ani TS.
+
+
+```{r}
+adf.test(diff(sbux, differences = 1)) #st
+kpss.test(diff(sbux, differences = 1)) #st
+kpss.test(diff(sbux, differences = 1), null = "Trend") #st
+```
+
+Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
+
+```{r}
+auto.arima(sbux)
+```
+
+### Inne rzeczy
+
+Rysunek bez trendu.
+  
+```{r}
+f <- FRAPO::trdhp(sbux, 14400)
+plot(sbux, type = "l")
+lines(f, col = 2)
+plot(sbux - f, type = "l")
+```
+
+### Sezonowość
+
+```{r}
+sbux_sez <- ts(sbux, frequency = 12)
+sbux_dek <- decompose(sbux_sez)
+forecast:: ggseasonplot(sbux_sez)
+forecast::ggseasonplot(sbux_sez, polar = T)
+trend <- sbux_dek$trend
+sezon <- sbux_dek$seasonal
+reszty <- sbux_dek$random
+plot(cbind(trend, sezon, reszty))
+plot(stl(sbux_sez, "periodic"))
+```
+
+```{r}
+plot(reszty)
+abline(h=0)
+```
+
+
+```{r}
+shapiro.test(reszty) #ohohoo malutkie p value
+qqnorm(reszty)
+qqline(reszty, col = 2)
+#nie ma normalności!!
+```
+
+Stanowczo nie ma normalności reszt.
+
+```{r}
+acf(reszty, na.action = na.pass) #dla dalszych z grubsza się mieszczą w pasku
+```
+
+Z wykresu wynika, że raczej nie mamy do czynienia z autokorelacją.
