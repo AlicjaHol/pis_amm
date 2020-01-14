@@ -3,13 +3,13 @@ title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz S
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
   html_document:
     theme: united
     toc: yes
     toc_depth: 4
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
 editor_options:
   chunk_output_type: console
 ---
@@ -373,11 +373,7 @@ auto.arima(mcd)
 
 Trend
 
-W środowisku R dostępne są także funkcje dotyczące filtrowania szeregów czasowych. Jest to takie przekształcenie danych które doprowadza do oczyszczenia szeregu czasowego z wahań periodycznych. W środowisku R dostępnych jest kilka takich filtrów. Jeden z bardzie popularnych to filtr Hodrick-Prescotta zaimplementowany w pakiecie FRAPO::trdhp. Stosując filtr HP należy pamiętać o odpowiednim doborze parametru  
-λ
- . Hodrick oraz Prescott zalecają, aby wartość współczynnika  
-λ
-  była równa 400, 1600 i 14400 odpowiednio dla danych rocznych, kwartalnych i miesięcznych.
+W środowisku R dostępne są także funkcje dotyczące filtrowania szeregów czasowych. Jest to takie przekształcenie danych które doprowadza do oczyszczenia szeregu czasowego z wahań periodycznych. W środowisku R dostępnych jest kilka takich filtrów. Jeden z bardzie popularnych to filtr Hodrick-Prescotta zaimplementowany w pakiecie FRAPO::trdhp. Stosując filtr HP należy pamiętać o odpowiednim doborze parametru $\lambda$. Hodrick oraz Prescott zalecają, aby wartość współczynnika $\lambda$ była równa 400, 1600 i 14400 odpowiednio dla danych rocznych, kwartalnych i miesięcznych.
   
   (P. Biecek Na przełaj przez Data Mining)
   
