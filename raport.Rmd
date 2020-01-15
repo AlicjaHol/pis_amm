@@ -30,6 +30,7 @@ McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejm
 
 ![Jedzenie z McDonald's](mcd_logo.jpg)
 
+
 ### Wczytanie danych i rysunki
 
 Na początek wczytujemy bibliotekę `tseries`, która będzie nam potrzebna do wykonania analizy szeregu czasowego.
@@ -414,42 +415,6 @@ plot(mcd - f, type = "l")
 
 
 
-### Sezonowość
-
-```{r}
-mcd_sez <- ts(mcd, frequency = 12)
-mcd_dek <- decompose(mcd_sez)
-forecast:: ggseasonplot(mcd_sez)
-forecast::ggseasonplot(mcd_sez, polar = T)
-trend <- mcd_dek$trend
-sezon <- mcd_dek$seasonal
-reszty <- mcd_dek$random
-plot(cbind(trend, sezon, reszty))
-plot(stl(mcd_sez, "periodic"))
-```
-
-Chyba McDonalds jest jakiś super sezonowy, bo wszystko idealnie wygląda na wykresach... ;p
-
-To skoro ten model wygląda najlepiej, to chyba dla jego reszt trzeba by testować... ?
-
-```{r}
-plot(reszty)
-abline(h=0)
-```
-
-
-```{r}
-shapiro.test(reszty) #ohohoo malutkie p value
-library(lmtest)
-qqnorm(reszty)
-qqline(reszty, col = 2)
-#nie ma normalności!!
-```
-
-```{r}
-acf(reszty, na.action = na.pass) #dla dalszych z grubsza się mieszczą w pasku
-```
-
 ### Arima
 
 Dobra, ogólnie tutaj nie wiem jak to zrobić, czy nasz w końcu ma tę sezonowość? Bo jeśli ma, to SARIMA podobno, a jeśli nie to ARIMA. Plus, ten szereg chyba jest niestacjonarny, nie? To też przecież musi być stacjonarny i ja nie wiem już nic w końcu :((()))
@@ -701,37 +666,3 @@ lines(f, col = 2)
 plot(sbux - f, type = "l")
 ```
 
-### Sezonowość
-
-```{r}
-sbux_sez <- ts(sbux, frequency = 12)
-sbux_dek <- decompose(sbux_sez)
-forecast:: ggseasonplot(sbux_sez)
-forecast::ggseasonplot(sbux_sez, polar = T)
-trend <- sbux_dek$trend
-sezon <- sbux_dek$seasonal
-reszty <- sbux_dek$random
-plot(cbind(trend, sezon, reszty))
-plot(stl(sbux_sez, "periodic"))
-```
-
-```{r}
-plot(reszty)
-abline(h=0)
-```
-
-
-```{r}
-shapiro.test(reszty) #ohohoo malutkie p value
-qqnorm(reszty)
-qqline(reszty, col = 2)
-#nie ma normalności!!
-```
-
-Stanowczo nie ma normalności reszt.
-
-```{r}
-acf(reszty, na.action = na.pass) #dla dalszych z grubsza się mieszczą w pasku
-```
-
-Z wykresu wynika, że raczej nie mamy do czynienia z autokorelacją.
