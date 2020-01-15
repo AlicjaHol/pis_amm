@@ -521,6 +521,7 @@ par(mfrow=c(1,1))
 
 Reszty modelu sześciennego mają mniejszy rozrzut niż w poprzednich przypadkach (od około -5 do 10).
 
+
 ### Ruchoma średnia
 
 
