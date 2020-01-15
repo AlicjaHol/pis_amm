@@ -64,7 +64,7 @@ Spróbujemy do danych dopasować wielomian stopnia 1, 2, 3 i 4.
 t <- 1:length(mcd)
 ```
 
-#### Model liniowy
+#### Dopasowanie modelu liniowego
 
 ```{r}
 
@@ -83,7 +83,7 @@ abline(h=0)
 par(mfrow = c(1, 1))
 ```
 
-#### Model kwadratowy
+#### Drugiego stopnia
 
 Teraz stworzymy model kwadratowy.
 
@@ -105,7 +105,7 @@ par(mfrow = c(1, 1))
 
 Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
-#### Model sześcienny
+#### Trzeciego stopnia
 
 
 
@@ -127,7 +127,7 @@ abline(h= 0)
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
-#### Model z czwartą potęgą
+#### Czwartego stopnia
 
 ```{r}
 mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
@@ -395,23 +395,7 @@ auto.arima(mcd)
 ```
 
 
-### Inne rzeczy
 
-Trend
-
-W środowisku R dostępne są także funkcje dotyczące filtrowania szeregów czasowych. Jest to takie przekształcenie danych które doprowadza do oczyszczenia szeregu czasowego z wahań periodycznych. W środowisku R dostępnych jest kilka takich filtrów. Jeden z bardzie popularnych to filtr Hodrick-Prescotta zaimplementowany w pakiecie FRAPO::trdhp. Stosując filtr HP należy pamiętać o odpowiednim doborze parametru $\lambda$. Hodrick oraz Prescott zalecają, aby wartość współczynnika $\lambda$ była równa 400, 1600 i 14400 odpowiednio dla danych rocznych, kwartalnych i miesięcznych.
-  
-  (P. Biecek Na przełaj przez Data Mining)
-  
-```{r}
-library(FRAPO)
-f <- FRAPO::trdhp(mcd, 14400)
-plot(mcd, type = "l")
-lines(f, col = 2)
-plot(mcd - f, type = "l")
-
-
-```
 
 
 
@@ -499,7 +483,7 @@ par(mfrow = c(1, 1))
 
 Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie niedoszacowuje, na koniec znowu przeszacowuje.
 
-#### Model kwadratowy
+#### Drugiego stopnia
 ```{r}
 mod2 <- lm(sbux~t+I(t^2))
 summary(mod2)
@@ -518,7 +502,7 @@ par(mfrow = c(1, 1))
 
 Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
 
-#### Model sześcienny
+#### Trzeciego stopnia
 ```{r}
 mod3 <- lm(sbux~t+I(t^2)+I(t^3))
 summary(mod3)
@@ -655,14 +639,5 @@ Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
 auto.arima(sbux)
 ```
 
-### Inne rzeczy
 
-Rysunek bez trendu.
-  
-```{r}
-f <- FRAPO::trdhp(sbux, 14400)
-plot(sbux, type = "l")
-lines(f, col = 2)
-plot(sbux - f, type = "l")
-```
 
