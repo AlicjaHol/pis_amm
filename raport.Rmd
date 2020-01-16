@@ -3,13 +3,14 @@ title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz S
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
   html_document:
     theme: united
     toc: yes
     toc_depth: 4
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
+  
 editor_options:
   chunk_output_type: console
 ---
@@ -40,7 +41,7 @@ library(forecast)
 
 McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejmuje ona ponad 30 tys. restauracji, każdego dnia obsługujących ponad 46 mln osób w 119 krajach. Wartość marki McDonald's szacuje się na 24,7 mld dolarów.
 
-![Jedzenie z McDonald's](mcd_logo.jpg)
+
 
 
 ### Wczytanie danych i rysunki
@@ -65,7 +66,109 @@ plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's"
  
 Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
 
+
+### Wydzielanie trendu
+
+Spróbujemy wydzielić część deterministyczną. Do tego celu posłużymy się metodami średnich ruchomych (prostą i wykładniczą).
+
+#### Ruchoma średnia
+
+Wykorzystamy metody ruchomych średnich, aby wygładzić szereg i zaobserwować ogólne trendy. Metoda średniej ruchomej ma na celu zmniejszenie rozrzutu razy $m+1$. 
+
+W metodzie średniej ruchomej estymator części deterministycznej ma postać
+
+$$\hat{f}(t) = \frac{1}{m+1}\sum_{k = 0}^{m}x_{t-k}$$
+
+Do wykonania wygładzonych wykresów napisaliśmy funkcję `ruchoma`, której argumentami są `x` - szereg czasowy, `m` - paramter metody średniej ruchomej, `kolor` - kolor, na jaki dorysujemy wygładzoną linię na wykresie.
+
+```{r funkcja ruchoma}
+ruchoma <- function(x, m, kolor){
+  t <- length(x)
+  f <- NULL
+  for(i in (m+1):t){
+    f[i] <- mean(x[(i-m):i])
+  }
+  tytul = paste("Średnia ruchoma rzędu ", m)
+  plot(x, type = "l", main = tytul)
+  lines((m+1):t, f[(m+1):t], lwd = 2, col = kolor)
+}
+```
+
+Narysujemy wykresy dla kilku parametrów `m`.
+
+
+
+```{r ruchoma MCD}
+par(mfrow = c(2, 2))
+ruchoma(mcd, 3, "red")
+ruchoma(mcd, 10, "green")
+ruchoma(mcd, 30, "blue")
+ruchoma(mcd, 50, "pink")
+par(mfrow = c(1, 1))
+```
+
+
+
+Jak widać, im większy parametr `m` przyjmiemy, tym bardziej wygładzony wykres uzyskujemy, ale też mniej dokładny.
+
+#### Metoda wykładniczych wag ruchomej średniej
+
+W metodzie ruchomej średniej obserwacje starsze i nowsze mają taką samą wagę, dlatego ta metoda jest mało dokładna. Skorzystamy teraz z dokładniejszej metody wykładniczych wag ruchomej średniej.
+
+W tej metodzie estymator części deterministycznej ma postać:
+
+$$\hat{f}(t) = \frac{1 - \eta}{1-\eta^t}\sum_{k = 0}^{t-1}\eta^kx_{t-k}$$
+
+gdzie $\eta \in (0, 1)$
+
+Skorzystamy z postaci rekurencyjnej:
+
+$$\hat{f}(t)=\frac{1- \eta}{1 - \eta^t}\left[x_t+ \eta \frac{1 - \eta^{t-1}}{1 - \eta} \hat{f}(t-1) \right]$$
+
+```{r funkcja wykładnicza}
+wykladnicza <- function(x, mi, kolor){
+  f <- NULL
+  f[1] <- x[1]
+  
+  for (i in 2:length(x)){
+    f[i] <- (1-mi)/(1-mi^i)*(x[i]+mi*(1-mi^(i-1))/(1-mi)*f[i-1])
+  }
+  tytul = paste("średnia ruchoma z wagami wykładniczymi z parametrem ", mi)
+  plot(x, type = "l", main = tytul)
+  lines(1:length(x), f, lwd = 2, col = kolor)
+}
+```
+
+
+
+
+```{r wykładnicza MCD}
+par(mfrow = c(2, 2))
+wykladnicza(mcd, 0.2, "red")
+wykladnicza(mcd, 0.5, "green")
+wykladnicza(mcd, 0.7, "blue")
+wykladnicza(mcd, 0.9, "pink")
+par(mfrow = c(1, 1))
+```
+
+
+
+Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność. Jednakże, dokładnośc jest i tak większa niż w przypadku prostej metody ruchomej średniej.
+
 ### Dopasowanie wielomianu
+
+#### Metoda różnicowa
+
+Za pomocą metody różnicowej sprawdzimy, jaki stopień wielomianu byłby najbardziej odpowiedni.
+
+```{r różnicowanie - rysunki MCD}
+par(mfrow = c(2, 3))
+for(i in 1:6){
+plot(diff(mcd, differences = i), type = "l")
+abline(h = 0)}
+par(mfrow=c(1,1))
+```
+
 
 Spróbujemy do danych dopasować wielomian stopnia 1, 2, 3 i 4.
 
@@ -152,107 +255,14 @@ plot(mod3$residuals, type = "l", main = "Reszty modelu z czwartą potęgą", xla
 abline(h= 0)
 ```
 
-W modelu z czwartą potęgą współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu sześciennego. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model sześcienny.
-
-### Ruchoma średnia
-
-Wykorzystamy metody ruchomych średnich, aby wygładzić szereg i zaobserwować ogólne trendy. Metoda średniej ruchomej ma na celu zmniejszenie rozrzutu razy $m+1$. 
-
-W metodzie średniej ruchomej estymator części deterministycznej ma postać
-
-$$\hat{f}(t) = \frac{1}{m+1}\sum_{k = 0}^{m}x_{t-k}$$
-
-Do wykonania wygładzonych wykresów napisaliśmy funkcję `ruchoma`, której argumentami są `x` - szereg czasowy, `m` - paramter metody średniej ruchomej, `kolor` - kolor, na jaki dorysujemy wygładzoną linię na wykresie.
-
-```{r funkcja ruchoma}
-ruchoma <- function(x, m, kolor){
-  t <- length(x)
-  f <- NULL
-  for(i in (m+1):t){
-    f[i] <- mean(x[(i-m):i])
-  }
-  plot(x, type = "l")
-  lines((m+1):t, f[(m+1):t], lwd = 2, col = kolor)
-}
-```
-
-Narysujemy wykresy dla kilku parametrów `m`.
-
-Dla `m` = 3:
-
-```{r ruchoma 3 MCD}
-ruchoma(mcd, 3, "red")
-```
-
-Dla `m` = 10:
-
-```{r ruchoma 10 MCD}
-ruchoma(mcd, 10, "green")
-```
-
-Dla `m` = 30:
-
-```{r ruchoma 30 MCD}
-ruchoma(mcd, 30, "blue")
-```
-
-Jak widać, im większy parametr `m` przyjmiemy, tym bardziej wygładzony wykres uzyskujemy, ale też mniej dokładny.
+W modelu wielomianowym czwartego stopnia współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu wielomianowego 3 stopnia. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model wielomianowy 3 stopnia.
 
 
-### Metoda wykładniczych wag ruchomej średniej
-
-W metodzie ruchomej średniej obserwacje starsze i nowsze mają taką samą wagę, dlatego ta metoda jest mało dokładna. Skorzystamy teraz z dokładniejszej metody wykładniczych wag ruchomej średniej.
-
-W tej metodzie estymator części deterministycznej ma postać:
-
-$$\hat{f}(t) = \frac{1 - \eta}{1-\eta^t}\sum_{k = 0}^{t-1}\eta^kx_{t-k}$$
-
-gdzie $\eta \in (0, 1)$
-
-Skorzystamy z postaci rekurencyjnej:
-
-$$\hat{f}(t)=\frac{1- \eta}{1 - \eta^t}\left[x_t+ \eta \frac{1 - \eta^{t-1}}{1 - \eta} \hat{f}(t-1) \right]$$
-
-```{r funkcja wykładnicza}
-wykladnicza <- function(x, mi, kolor){
-  f <- NULL
-  f[1] <- x[1]
-  
-  for (i in 2:length(x)){
-    f[i] <- (1-mi)/(1-mi^i)*(x[i]+mi*(1-mi^(i-1))/(1-mi)*f[i-1])
-  }
-  plot(x, type = "l")
-  lines(1:length(x), f, lwd = 2, col = kolor)
-}
-```
-
-Dla $\eta = 0.2$
 
 
-```{r wykładnicza 0.2 MCD}
-wykladnicza(mcd, 0.2, "red")
-```
 
-Dla $\eta = 0.5$
 
-```{r wykładnicza 0.5 MCD}
-wykladnicza(mcd, 0.5, "green")
 
-```
-
-Dla $\eta = 0.7$
-
-```{r wykładnicza 0.7 MCD}
-wykladnicza(mcd, 0.7, "blue")
-```
-
-Dla $\eta = 0.9$
-
-```{r wykładnicza 0.9 MCD}
-wykladnicza(mcd, 0.9, "yellow")
-```
-
-Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność.
 
 ### Testy na resztach modelu
 
@@ -376,15 +386,7 @@ acf(mod3$residuals)
 
 Oba testy wskazują, że istnieje seryjna korelacja błędów. Również z wykresu funkcji `acf` możemy wyciągnąć te same wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
 
-### Metoda różnicowa
 
-```{r różnicowanie - rysunki MCD}
-par(mfrow = c(2, 3))
-for(i in 1:6){
-plot(diff(mcd, differences = i), type = "l")
-abline(h = 0)}
-par(mfrow=c(1,1))
-```
 
 ### Stacjonarność
 
