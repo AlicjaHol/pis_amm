@@ -1,4 +1,5 @@
 ---
+lang: pl
 title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz Starbucks"
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
@@ -25,7 +26,7 @@ W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's or
 
 ## Wczytanie bibliotek
 
-Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA.
+Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA. Pakiet `stargazer` pozwoli nam estetycznie wyświetlać tabele z podsumowaniami.
 
 ```{r biblioteki}
 library(tseries)
@@ -33,6 +34,10 @@ library(randtests)
 library(nortest)
 library(lmtest)
 library(forecast)
+library(stargazer)
+library(kableExtra)
+library(tidyverse)
+library(tables)
 ```
 
 ## McDonald's
@@ -182,8 +187,13 @@ t <- 1:length(mcd)
 ```{r model liniowy MCD}
 
 mod1 <- lm(mcd~t)
-summary(mod1)
+
 ```
+
+```{r model liniowy MCD stargazer, results = 'asis'}
+stargazer(mod1, header = F)
+```
+
 
 Zarówno wyraz wolny, jak i współczynnik kierunkowy są istotne statystycznie. $R^2$ wynosi około 74%.
 
@@ -191,27 +201,34 @@ Zarówno wyraz wolny, jak i współczynnik kierunkowy są istotne statystycznie.
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
 abline(mod1, col = "red")
-plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
+plot(mod1$residuals, type = "l", 
+     main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
 abline(h=0)
 par(mfrow = c(1, 1))
 ```
 
 #### Drugiego stopnia
 
-Teraz stworzymy model kwadratowy.
+Teraz stworzymy model wielomianowy drugiego stopnia.
 
 ```{r drugi stopień MCD}
 mod2 <- lm(mcd~t+I(t^2))
-summary(mod2)
+```
+
+```{r drugi stopień MCD stargazer, results = 'asis'}
+stargazer(mod2, header = F)
 ```
 
 Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 75%, a więc zmieniło się bardzo nieznacznie.
 
 ```{r drugi stopień - wykresy MCD}
 par(mfrow = c(1, 2))
-plot(mcd, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
+plot(mcd, type = "l", main = "Model wielomianowy \n drugiego stopnia", 
+     xlab = "czas", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red", )
-plot(mod2$residuals, type = "l", main = "Reszty modelu kwadratowego", xlab = "czas", ylab = "reszty")
+plot(mod2$residuals, type = "l", 
+     main = "Reszty modelu \nwielomianowego \ndrugiego stopnia", 
+     xlab = "czas", ylab = "reszty")
 abline(h = 0)
 par(mfrow = c(1, 1))
 ```
@@ -224,18 +241,25 @@ Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
 ```{r trzeci stopień MCD}
 mod3 <- lm(mcd~t+I(t^2)+I(t^3))
-summary(mod3)
 ```
 
-W modelu sześciennym wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi 90%, a więc znacząco się poprawił w stosunku do poprzednich dwóch modeli.
+```{r trzeci stopień MCD stargazer, results='asis'}
+stargazer(mod3, header = F)
+```
+
+W modelu wielomianowym trzeciego stopnia wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi 90%, a więc znacząco się poprawił w stosunku do poprzednich dwóch modeli.
 
 ```{r trzeci stopień - wykresy MCD}
 par(mfrow = c(1, 2))
-plot(mcd, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
+plot(mcd, type = "l", 
+     main = "Model wielomianowy \ntrzeciego stopnia", 
+     xlab = "czas", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
-plot(mod3$residuals, type = "l", main = "Reszty modelu sześciennego", xlab = "czas", ylab = "reszty")
+plot(mod3$residuals, type = "l", 
+     main = "Reszty modelu \nwielomianowego \ntrzeciego stopnia", 
+     xlab = "czas", ylab = "reszty")
 abline(h= 0)
-
+par(mfrow = c(1, 1))
 ```
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
@@ -244,15 +268,22 @@ Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy sk
 
 ```{r czwarty stopień MCD}
 mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
-summary(mod4)
+```
+
+```{r czwarty stopień MCD stargazer, results='asis'}
+stargazer(mod4, header = F)
 ```
 
 ```{r czwarty stopień - wykresy MCD}
 par(mfrow = c(1, 2))
-plot(mcd, type = "l", main = "Model z czwartą potęgą", xlab = "czas", ylab = "USD")
+plot(mcd, type = "l", main = "Model wielomianowy \nczwartego stopnia", 
+     xlab = "czas", ylab = "USD")
 lines(t, mod4$fitted.values, col = "red")
-plot(mod3$residuals, type = "l", main = "Reszty modelu z czwartą potęgą", xlab = "czas", ylab = "reszty")
+plot(mod3$residuals, type = "l", 
+     main = "Reszty modelu \nwielomianowego \nczwartego stopnia", 
+     xlab = "czas", ylab = "reszty")
 abline(h= 0)
+par(mfrow=c(1,1))
 ```
 
 W modelu wielomianowym czwartego stopnia współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu wielomianowego 3 stopnia. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model wielomianowy 3 stopnia.
@@ -274,15 +305,8 @@ Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz spr
 
 - normalność
 
-- brak autokorelacji
 
-#### Losowość
 
-```{r losowość reszt MCD}
-
-runs.test(mod3$residuals, threshold = 0, plot = T)
-```
-P-value bliskie zero, odrzucamy hipotezę o losowości reszt.
 
 #### Jednorodność wariancji
 
@@ -364,7 +388,20 @@ Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika
 
 #### Autokorelacja
 
-Test `Durbina-Watsona`
+- Test serii
+
+$H_0:$ losowość
+
+$H_1:$ brak losowości
+
+```{r losowość reszt MCD}
+
+runs.test(mod3$residuals, threshold = 0, plot = T)
+```
+
+P-value bliskie zero, odrzucamy hipotezę o losowości reszt.
+
+- Test Durbina-Watsona
 
 Weryfikuje hipotezę o niezależności reszt, sprawdzając, czy istotna jest autokorelacja reszt rzędu pierwszego.
 
@@ -373,38 +410,76 @@ Weryfikuje hipotezę o niezależności reszt, sprawdzając, czy istotna jest aut
 dwtest(mod3, order.by = ~t)
 ```
 
-Test `Breuscha-Godfreya`
+- Test Breuscha-Godfreya
 
 ```{r test BG MCD}
 bgtest(mod3, order.by = ~t, order = 3)
 ```
 
+- Wykres ACF (funkcji autokorelacji)
 
 ```{r test ACF - korelacja MCD}
-acf(mod3$residuals)
+acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
 ```
 
 Oba testy wskazują, że istnieje seryjna korelacja błędów. Również z wykresu funkcji `acf` możemy wyciągnąć te same wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
 
+- Wykres PACF (cząstkowej funkcji autokorelacji)
 
+```{r test PACF MCD}
+pacf(mod3$residuals, main = "Cząstkowa funkcja autokorelacji")
+```
+
+Wykres `PACF` jako jedyny nie wykrywa autokorelacji.
+
+- Test Ljunga-Boxa
+
+$H_0:$ niezależność
+
+$H_1:$ brak niezależności
+
+```{r box-ljung MCD}
+Box.test(mod3$residuals, type = "Ljung-Box")
+```
+
+P-value jest bardzo bliskie zero, odrzucamy hipotezę zerową, reszty nie są niezależne.
+
+Ostatecznie stwierdzamy, że zachodzi autokorelacja reszt.
 
 ### Stacjonarność
 
+Zbadamy, czy szereg jest stacjonarny albo TS (trend stationary).
+
+Skorzystamy z dwóch testów :
+- `adf` (Dickey-Fullera) 
+
+$H_0:$ niestacjonarność
+
+$H_1:$ stacjonarność
+
+- `kpss` (Kwiatkowskiego-Phillipsa-Schmidta-Shina)
+
+$H_0:$ stacjonarność
+
+$H_1:$ niestacjonarność
+
 ```{r testy stacjonarność MCD}
-adf.test(mcd) #niest
-kpss.test(mcd) #niest
-kpss.test(mcd, null = "Trend") #niest
+adf.test(mcd) 
+kpss.test(mcd) 
+kpss.test(mcd, null = "Trend") 
+
+```
+
+Po wykonaniu testów otrzymujemy wniosek, że szereg nie jest stacjonarny, ani stacjonarny wobec trendu.
+
+```{r testy stacjonarność - różnicowanie MCD}
 adf.test(diff(mcd, differences = 1)) #stacj
 kpss.test(diff(mcd, differences = 1)) #stacj
 kpss.test(diff(mcd, differences = 1), null = "Trend") #stacj
 ```
 
-Szereg jest niestacjonarny, i niestacjonarny względem trendu. Po zróżnicowaniu 1 raz, jest zarówno stacjonarny, jak i TS (Trend Stationary).
+Po zróżnicowaniu 1 raz, szereg jest zarówno stacjonarny, jak i TS.
 
-```{r auto arima MCD}
-
-auto.arima(mcd)
-```
 
 
 
@@ -413,7 +488,15 @@ auto.arima(mcd)
 
 ### Arima
 
+ARIMA JEST JESZCZE DO POPRAWKI!!!!!!!
+
 Dobra, ogólnie tutaj nie wiem jak to zrobić, czy nasz w końcu ma tę sezonowość? Bo jeśli ma, to SARIMA podobno, a jeśli nie to ARIMA. Plus, ten szereg chyba jest niestacjonarny, nie? To też przecież musi być stacjonarny i ja nie wiem już nic w końcu :((()))
+
+```{r auto arima MCD}
+
+auto.arima(mcd)
+```
+
 
 ```{r arima MCD}
 #Arima(reszty, order = c(12,0,2)) #tu AIC jakoś 1842, jak sie leci z p do gory, to coraz lepiej, ale tez nie wiem co tu robic w ogóle
