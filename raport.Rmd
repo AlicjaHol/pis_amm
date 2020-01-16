@@ -3,13 +3,13 @@ title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz S
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
   html_document:
     theme: united
     toc: yes
     toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
 editor_options:
   chunk_output_type: console
 ---
@@ -22,6 +22,18 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 
 W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's oraz Starbucks z okresu dwóch lat (od początku 2018 do końca 2019). Na potrzeby oceny w raporcie pojawia się nie tylko sama analiza, ale też wszystkie polecenia w języku `R`, jakich używaliśmy w jej celu.
 
+## Wczytanie bibliotek
+
+Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA.
+
+```{r biblioteki}
+library(tseries)
+library(randtests)
+library(nortest)
+library(lmtest)
+library(forecast)
+```
+
 ## McDonald's
 
 ### Opis firmy
@@ -33,15 +45,13 @@ McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejm
 
 ### Wczytanie danych i rysunki
 
-Na początek wczytujemy bibliotekę `tseries`, która będzie nam potrzebna do wykonania analizy szeregu czasowego.
 
-```{r}
-library(tseries)
-```
+
+
 
 Dane pobieramy z `yahoo finance` za pomocą funkcji `get.hist.quote` i zamieniamy na typ numeryczny.
 
-```{r}
+```{r wczytanie danych MCD}
 mcd<- get.hist.quote(instrument = "MCD", provider = "yahoo",
                           quote = "Close", start = "2018-01-01", end = "2019-12-31")
 mcd <- as.numeric(mcd)
@@ -49,7 +59,7 @@ mcd <- as.numeric(mcd)
 
 Wykonamy rysunek przedstawiający notowania firmy McDonald's od 01-01-2018 do 31-12-2019
 
-```{r}
+```{r rysunek notowań MCD}
 plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's")
 ```
  
@@ -60,13 +70,13 @@ Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
 Spróbujemy do danych dopasować wielomian stopnia 1, 2, 3 i 4.
 
 
-```{r}
+```{r zmienna t MCD}
 t <- 1:length(mcd)
 ```
 
 #### Dopasowanie modelu liniowego
 
-```{r}
+```{r model liniowy MCD}
 
 mod1 <- lm(mcd~t)
 summary(mod1)
@@ -74,7 +84,7 @@ summary(mod1)
 
 Zarówno wyraz wolny, jak i współczynnik kierunkowy są istotne statystycznie. $R^2$ wynosi około 74%.
 
-```{r}
+```{r model liniowy - wykresy MCD} 
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
 abline(mod1, col = "red")
@@ -87,14 +97,14 @@ par(mfrow = c(1, 1))
 
 Teraz stworzymy model kwadratowy.
 
-```{r}
+```{r drugi stopień MCD}
 mod2 <- lm(mcd~t+I(t^2))
 summary(mod2)
 ```
 
 Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 75%, a więc zmieniło się bardzo nieznacznie.
 
-```{r}
+```{r drugi stopień - wykresy MCD}
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red", )
@@ -109,14 +119,14 @@ Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
 
 
-```{r}
+```{r trzeci stopień MCD}
 mod3 <- lm(mcd~t+I(t^2)+I(t^3))
 summary(mod3)
 ```
 
 W modelu sześciennym wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi 90%, a więc znacząco się poprawił w stosunku do poprzednich dwóch modeli.
 
-```{r}
+```{r trzeci stopień - wykresy MCD}
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
@@ -129,12 +139,12 @@ Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy sk
 
 #### Czwartego stopnia
 
-```{r}
+```{r czwarty stopień MCD}
 mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
 summary(mod4)
 ```
 
-```{r}
+```{r czwarty stopień - wykresy MCD}
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model z czwartą potęgą", xlab = "czas", ylab = "USD")
 lines(t, mod4$fitted.values, col = "red")
@@ -154,7 +164,7 @@ $$\hat{f}(t) = \frac{1}{m+1}\sum_{k = 0}^{m}x_{t-k}$$
 
 Do wykonania wygładzonych wykresów napisaliśmy funkcję `ruchoma`, której argumentami są `x` - szereg czasowy, `m` - paramter metody średniej ruchomej, `kolor` - kolor, na jaki dorysujemy wygładzoną linię na wykresie.
 
-```{r}
+```{r funkcja ruchoma}
 ruchoma <- function(x, m, kolor){
   t <- length(x)
   f <- NULL
@@ -170,19 +180,19 @@ Narysujemy wykresy dla kilku parametrów `m`.
 
 Dla `m` = 3:
 
-```{r}
+```{r ruchoma 3 MCD}
 ruchoma(mcd, 3, "red")
 ```
 
 Dla `m` = 10:
 
-```{r}
+```{r ruchoma 10 MCD}
 ruchoma(mcd, 10, "green")
 ```
 
 Dla `m` = 30:
 
-```{r}
+```{r ruchoma 30 MCD}
 ruchoma(mcd, 30, "blue")
 ```
 
@@ -203,7 +213,7 @@ Skorzystamy z postaci rekurencyjnej:
 
 $$\hat{f}(t)=\frac{1- \eta}{1 - \eta^t}\left[x_t+ \eta \frac{1 - \eta^{t-1}}{1 - \eta} \hat{f}(t-1) \right]$$
 
-```{r}
+```{r funkcja wykładnicza}
 wykladnicza <- function(x, mi, kolor){
   f <- NULL
   f[1] <- x[1]
@@ -219,26 +229,26 @@ wykladnicza <- function(x, mi, kolor){
 Dla $\eta = 0.2$
 
 
-```{r}
+```{r wykładnicza 0.2 MCD}
 wykladnicza(mcd, 0.2, "red")
 ```
 
 Dla $\eta = 0.5$
 
-```{r}
+```{r wykładnicza 0.5 MCD}
 wykladnicza(mcd, 0.5, "green")
 
 ```
 
 Dla $\eta = 0.7$
 
-```{r}
+```{r wykładnicza 0.7 MCD}
 wykladnicza(mcd, 0.7, "blue")
 ```
 
 Dla $\eta = 0.9$
 
-```{r}
+```{r wykładnicza 0.9 MCD}
 wykladnicza(mcd, 0.9, "yellow")
 ```
 
@@ -258,8 +268,8 @@ Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz spr
 
 #### Losowość
 
-```{r}
-library(randtests)
+```{r losowość reszt MCD}
+
 runs.test(mod3$residuals, threshold = 0, plot = T)
 ```
 P-value bliskie zero, odrzucamy hipotezę o losowości reszt.
@@ -274,8 +284,8 @@ $H_0:$ jednorodność wariancji reszt.
 
 $H_1:$ wariancja reszt zależy od zmiennych objaśniających w modelu.
 
-```{r}
-library(lmtest)
+```{r test BP MCD}
+
 bptest(mod3)
 pv1 <- bptest(mod3)$p.value
 ```
@@ -290,7 +300,7 @@ $H_0:$ wariancja reszt jest równa w obu grupach.
 
 $H_1:$ wariancja reszt różni się w obu grupach.
 
-```{r}
+```{r test GQ MCD}
 gqtest(mod3, order.by = ~fitted(mod3))
 pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 ```
@@ -305,7 +315,7 @@ $H_0:$ wariancja reszt jest równa w porównywanych grupach.
 
 $H_1:$ wariancja reszt różni się się w porównywanych grupach.
 
-```{r}
+```{r test HMC MCD}
 hmctest(mod3, order.by = ~fitted(mod3))
 pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
 ```
@@ -316,23 +326,23 @@ Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzec
 
 #### Normalność
 
-```{r}
+```{r wykres gęstości normalny MCD}
 plot(density(mod3$residuals), main = "Wykres gęstości rozkładu reszt w porównaniu z rozkładem normalnym")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 ```
 
-```{r}
+```{r wykres qq MCD}
 qqnorm(mod3$residuals, main = "Wykres z linią kwantylową")
 qqline(mod3$residuals, col=2, lwd = 3)
 ```
 
-```{r}
+```{r wykres dystrybuanty normalny MCD}
 plot(ecdf(mod3$residuals), main = "Dystrybuanta empiryczna w porównaniu z rozkładem normalnym")
 curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 ```
 
-```{r}
-library(nortest)
+```{r testy normalności MCD}
+
 ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
 lillie.test(mod3$residuals)
 shapiro.test(mod3$residuals)
@@ -348,19 +358,19 @@ Test `Durbina-Watsona`
 
 Weryfikuje hipotezę o niezależności reszt, sprawdzając, czy istotna jest autokorelacja reszt rzędu pierwszego.
 
-```{r}
-library(lmtest)
+```{r test DW MCD}
+
 dwtest(mod3, order.by = ~t)
 ```
 
 Test `Breuscha-Godfreya`
 
-```{r}
+```{r test BG MCD}
 bgtest(mod3, order.by = ~t, order = 3)
 ```
 
 
-```{r}
+```{r test ACF - korelacja MCD}
 acf(mod3$residuals)
 ```
 
@@ -368,7 +378,7 @@ Oba testy wskazują, że istnieje seryjna korelacja błędów. Również z wykre
 
 ### Metoda różnicowa
 
-```{r}
+```{r różnicowanie - rysunki MCD}
 par(mfrow = c(2, 3))
 for(i in 1:6){
 plot(diff(mcd, differences = i), type = "l")
@@ -378,7 +388,7 @@ par(mfrow=c(1,1))
 
 ### Stacjonarność
 
-```{r}
+```{r testy stacjonarność MCD}
 adf.test(mcd) #niest
 kpss.test(mcd) #niest
 kpss.test(mcd, null = "Trend") #niest
@@ -389,8 +399,8 @@ kpss.test(diff(mcd, differences = 1), null = "Trend") #stacj
 
 Szereg jest niestacjonarny, i niestacjonarny względem trendu. Po zróżnicowaniu 1 raz, jest zarówno stacjonarny, jak i TS (Trend Stationary).
 
-```{r}
-library(forecast)
+```{r auto arima MCD}
+
 auto.arima(mcd)
 ```
 
@@ -403,13 +413,13 @@ auto.arima(mcd)
 
 Dobra, ogólnie tutaj nie wiem jak to zrobić, czy nasz w końcu ma tę sezonowość? Bo jeśli ma, to SARIMA podobno, a jeśli nie to ARIMA. Plus, ten szereg chyba jest niestacjonarny, nie? To też przecież musi być stacjonarny i ja nie wiem już nic w końcu :((()))
 
-```{r}
+```{r arima MCD}
 #Arima(reszty, order = c(12,0,2)) #tu AIC jakoś 1842, jak sie leci z p do gory, to coraz lepiej, ale tez nie wiem co tu robic w ogóle
 ```
 
 ### Holt - Winters
 
-```{r}
+```{r holt-winters MCD}
 #mcd_hw <- HoltWinters(mcd_sez, seasonal = "additive")
 #pred <- predict(mcd_hw, n.ahead = 4*12, prediction.interval = T, level = 0.9)
 #plot(mcd_hw, pred)
@@ -442,7 +452,7 @@ Podobno kawa w Starbucksie jest droższa niż paliwo w Polsce!!!!
 ### Wczytanie danych
 
 
-```{r}
+```{r wczytanie danych SBUX}
 sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
                           quote = "Close", start = "2018-01-01", end = "2019-12-31")
 sbux<- as.numeric(sbux)
@@ -451,7 +461,7 @@ sbux<- as.numeric(sbux)
 ### Rysunek
 
 
-```{r}
+```{r rysunek notowań SBUX}
 plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks")
 ```
 
@@ -459,19 +469,19 @@ Widać trend rosnący.
 
 ### Dopasowanie wielomianu
 
-```{r}
+```{r zmienna t SBUX}
 t <- 1:length(sbux)
 ```
 
 #### Model liniowy
-```{r}
+```{r model liniowy SBUX}
 mod1 <- lm(sbux~t)
 summary(mod1)
 ```
 
 Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 79%.
 
-```{r}
+```{r model liniowy - rysunki SBUX}
 par(mfrow = c(1, 2))
 plot(sbux, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
 abline(mod1, col = "red")
@@ -484,14 +494,14 @@ par(mfrow = c(1, 1))
 Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie niedoszacowuje, na koniec znowu przeszacowuje.
 
 #### Drugiego stopnia
-```{r}
+```{r drugi stopień SBUX}
 mod2 <- lm(sbux~t+I(t^2))
 summary(mod2)
 ```
 
 Współczynnik przy t jest nieistotny statystycznie (p-value około 0.08, więc decyzja niejednoznaczna), ale $R^2$ poprawiło się - wynosi teraz około 83%.
 
-```{r}
+```{r drugi stopień - rysunki SBUX}
 par(mfrow = c(1, 2))
 plot(sbux, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red")
@@ -503,14 +513,14 @@ par(mfrow = c(1, 1))
 Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
 
 #### Trzeciego stopnia
-```{r}
+```{r trzeci stopień SBUX}
 mod3 <- lm(sbux~t+I(t^2)+I(t^3))
 summary(mod3)
 ```
 
 Wszystkie współczynniki są istotne statystycznie, a $R^2$ znów wzrosło - wynosi około 92% (znaczna poprawa).
 
-```{r}
+```{r trzeci stopień - rysunki SBUX}
 par(mfrow = c(1, 2))
 plot(sbux, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
@@ -525,48 +535,48 @@ Reszty modelu sześciennego mają mniejszy rozrzut niż w poprzednich przypadkac
 ### Ruchoma średnia
 
 
-```{r}
+```{r ruchoma 3 SBUX}
 ruchoma(sbux, 3, "red")
 ```
 
-```{r}
+```{r ruchoma 10 SBUX}
 ruchoma(sbux, 10, "green")
 ```
 
-```{r}
+```{r ruchoma 30 SBUX}
 ruchoma(sbux, 30, "blue")
 ```
 
 ### Metoda wykładniczych wag ruchomej średniej
 
 
-```{r}
+```{r wykładnicza 0.2 SBUX}
 wykladnicza(sbux, 0.2, "red")
 ```
 
-```{r}
+```{r wykładnicza 0.5 SBUX}
 wykladnicza(sbux, 0.5, "green")
 
 ```
 
-```{r}
+```{r wykładnicza 0.7 SBUX}
 wykladnicza(sbux, 0.7, "blue")
 ```
 
-```{r}
+```{r wykładnicza 0.9 SBUX}
 wykladnicza(sbux, 0.9, "yellow")
 ```
 
 ### Testy na resztach modelu sześciennego
 
-```{r}
+```{r losowość reszt SBUX}
 runs.test(mod3$residuals, threshold = 0, plot = T)
 ```
 P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt
 
 Wykresy normalności
 
-```{r}
+```{r wykres gęstośi normalny SBUX}
 plot(density(mod3$residuals))
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 
@@ -574,21 +584,21 @@ curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 
 Wykres gęstości empirycznej znacząco różni się od gęstości rozkładu normalnego. Bardzo znacząco.
 
-```{r}
+```{r wykres qq SBUX}
 qqnorm(mod3$residuals)
 qqline(mod3$residuals, col=2, lwd = 3)
 ```
 
 Tutaj także wyraźne odchyłki.
 
-```{r}
+```{r wykres dystrybuanty normalny SBUX}
 plot(ecdf(mod3$residuals))
 curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 ```
 
 Nawet na dystrybuancie widać, że rozkład normalny wygląda inaczej.
 
-```{r}
+```{r testy normalności SBUX}
 ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
 lillie.test(mod3$residuals) 
 shapiro.test(mod3$residuals) 
@@ -599,7 +609,7 @@ W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipote
 
 Badanie autokorelacji
 
-```{r}
+```{r test ACF - korelacja SBUX}
 acf(mod3$residuals)
 ```
 
@@ -607,7 +617,7 @@ Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce
 
 ### Metoda różnicowa
 
-```{r}
+```{r różnicowanie - rysunki SBUX}
 par(mfrow = c(3, 3))
 for(i in 1:9){
 plot(diff(sbux, differences = i), type = "l")
@@ -618,7 +628,7 @@ par(mfrow=c(1,1))
 Z wykresów widać, że największa stabilizacja jest przy różnicowaniu rzędu 2 lub 3, potem rozrzut zaczyna się znacząco zwiększać.
 
 ### Stacjonarność
-```{r}
+```{r stacjonarność - testy SBUX}
 adf.test(sbux) #niest
 kpss.test(sbux) #niest
 kpss.test(sbux, null = "Trend") #niest
@@ -628,7 +638,7 @@ kpss.test(sbux, null = "Trend") #niest
 Szereg nie jest ani stacjonarny ani TS.
 
 
-```{r}
+```{r stacjonarność - testy po zróżnicowaniu SBUX}
 adf.test(diff(sbux, differences = 1)) #st
 kpss.test(diff(sbux, differences = 1)) #st
 kpss.test(diff(sbux, differences = 1), null = "Trend") #st
@@ -636,7 +646,7 @@ kpss.test(diff(sbux, differences = 1), null = "Trend") #st
 
 Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
 
-```{r}
+```{r auto-arima SBUX}
 auto.arima(sbux)
 ```
 
