@@ -243,7 +243,7 @@ Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 75%, a 
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model wielomianowy \n drugiego stopnia", 
      xlab = "czas", ylab = "USD")
-lines(t, mod2$fitted.values, col = "red", )
+lines(t, mod2$fitted.values, col = "red")
 plot(mod2$residuals, type = "l", 
      main = "Reszty modelu \nwielomianowego \ndrugiego stopnia", 
      xlab = "czas", ylab = "reszty")
@@ -579,23 +579,7 @@ Zrobiliśmy analizę. Nie umiemy jej zinterpretować. Jest fajnie.
 
 Starbucks Corporation – największa na świecie sieć kawiarni. Została założona 30 marca 1971 w Seattle w stanie Waszyngton.
 
-![Kawa ze Starbucks](sbux_logo.jpg)
-
-Kawa ze Starbucks jest znana z tego, że pojawiła się jako błąd w jednym z odcinków Gry o tron.
-
-![Starbucks jest tak popularny, że piją go nawet w fantasy, które dzieje się w średniowieczu!](gra-o-tron-starbucks.jpg)
-
-Kawiarnia jest znana z tego, że każdy kubek jest podpisany imieniem zamawiającego. Urocze!
-
-
-![hehe](sbux_name.jpg)
-
-
-Podobno kawa w Starbucksie jest droższa niż paliwo w Polsce!!!!
-![ach ta akcyza](Starbucks-Gas.jpg)
-
-### Wczytanie danych
-
+### Wczytanie danych i rysunki
 
 ```{r wczytanie danych SBUX}
 sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
@@ -603,14 +587,13 @@ sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
 sbux<- as.numeric(sbux)
 ```
 
-### Rysunek
-
+Wykonamy rysunek przedstawiający notowania firmy Starbucks od 01-01-2018 do 31-12-2019.
 
 ```{r rysunek notowań SBUX}
 plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks")
 ```
 
-Widać trend rosnący.
+Na rysunku możemy zaobserwować trend rosnący.
 
 ### Dopasowanie wielomianu
 
