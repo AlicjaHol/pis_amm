@@ -4,6 +4,7 @@ title: "Analiza szeregów czasowych - notowania giełdowe firm McDonald's oraz S
 author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
+  
   pdf_document:
     toc: yes
     toc_depth: '4'
@@ -11,7 +12,6 @@ output:
     theme: united
     toc: yes
     toc_depth: 4
-  
 editor_options:
   chunk_output_type: console
 ---
@@ -20,13 +20,31 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
+# Matylda!! (to do, to do, to do to do to do to doooooooo)
+
+- estetycznie można trochę poprawić, np. jak są te testy kpss i inne, to na razie robiłam tak, żeby wyświetlało ten domyślny output, może zamiast tego zrób tak jak Ty robiłaś w testach, że zapisać p-value do zmiennej i opisać? i popatrz jak wyglądają wykresy, szczególnie w pdf, może coś nie wygląda tak dobrze jak się nam wydawało, np tytuły się nie mieszczą, albo coś jest za bardzo ściśnięte, np wiem że te wykresy dla wielomianu 4 stopnia z nieznanych dla mnie przyczyn strasznie odwalają w pdf
+
+- jeżeli nadal coś się nie zgadza z tą kolejnością co Kozłowski proponował, to możesz poprzestawiać
+
+- co do opisów firm - ze Starbucksa trzeba wywalić zdjęcia bo dupnie wyglądają w pdf. I nie wiem czy ewentualnie z neta nie skopiować ze dwa zdania więcej do każdego, bo jakoś blado. spadliśmy już do 44 stron także jest coraz lepiej :) a jak wywalimy rysunki to jeszcze kolejne 3-4 strony pójdą
+
+- sprawdź, jak wyglądają tabelki w pdfie - czy na pewno każda się wyświetla dokładnie gdzie ma być. Jeśli nie, to np dla tabelek robionych poprzez `kable_styling` można dodawać parametry: ` position = 'center'`, `latex_options = "HOLD_position"` i powinny się trzymać swojego miejsca
+
+- za Chiny ludowe nie wiem jak robić jakieś prognozy czy cokolwiek... bo ten holt winters to chyba tylko dla sezonowych idzie. zobacz czy coś się da, a jak nie to usuwaj to gadowstwo.
+
+- co do ARIMY - opisałam tak, jak na laborkach robiliśmy, zobacz czy z tego modelu da się wyciągnąć reszty i robić na nich testy. jeśli się da, to zrób te testy
+
+- myślałam żeby na koniec każdej z tych firm zrobić takie podsumowanie - że np dla McDonalda z modelów wielomianowych najlepszy był taki i taki, jego reszty spełniają/nie spełniają cośtam, oprócz tego dopasowaliśmy model ARIMA taki śmaki, jego reszty cośtam cośtam... jakieś takie ładne sratatata na zakończenie
+
+- pracuj przede wszystkim nad McDonaldem, potem Marcin spisze do Starbucksa. Chociaż tam też oczywiście możesz coś zacząć żeby mu ułatwić.
+
 ## Wstęp
 
 W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's oraz Starbucks z okresu dwóch lat (od początku 2018 do końca 2019). Na potrzeby oceny w raporcie pojawia się nie tylko sama analiza, ale też wszystkie polecenia w języku `R`, jakich używaliśmy w jej celu.
 
 ## Wczytanie bibliotek
 
-Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA. Pakiet `stargazer` pozwoli nam estetycznie wyświetlać tabele z podsumowaniami.
+Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA. Pakiety `stargazer`, `tables` i `kableExtra` pozwolą nam estetycznie wyświetlać tabele.
 
 ```{r biblioteki}
 library(tseries)
@@ -207,7 +225,7 @@ abline(h=0)
 par(mfrow = c(1, 1))
 ```
 
-#### Drugiego stopnia
+#### Dopasowanie wielomianem drugiego stopnia
 
 Teraz stworzymy model wielomianowy drugiego stopnia.
 
@@ -235,7 +253,7 @@ par(mfrow = c(1, 1))
 
 Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
-#### Trzeciego stopnia
+#### Dopasowanie wielomianem trzeciego stopnia
 
 
 
@@ -264,7 +282,7 @@ par(mfrow = c(1, 1))
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
-#### Czwartego stopnia
+#### Dopasowanie wielomianem czwartego stopnia
 
 ```{r czwarty stopień MCD}
 mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
@@ -312,7 +330,7 @@ Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz spr
 
 Aby zbadać czy jednorodność reszt posłużymy się kilkoma popularnymi testami.
 
-Test `Breuscha-Pagana`
+- Test `Breuscha-Pagana`
 
 $H_0:$ jednorodność wariancji reszt.
 
@@ -326,7 +344,7 @@ pv1 <- bptest(mod3)$p.value
 
 P-value wynosi `r sprintf("%.10f",pv1)`, zatem Wug testu Breuscha-Pagana należałoby odrzucić hipotezę o jednorodności wariancji reszt.
 
-Test `Goldfelda-Quandta`
+- Test `Goldfelda-Quandta`
 
 Weryfikacja hipotezy polega na podziale danych na dwie grupy i sprawdzeniu, czy w obu wariancja ma taką samą wartość.
 
@@ -341,7 +359,7 @@ pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 
 P-value wynosi `r sprintf("%.3f", pv2)`, zatem nie ma podstaw do odrzucenia hipotezy o równości wariancji.
 
-Test `Harrisona-McCabe'a`
+- Test `Harrisona-McCabe'a`
 
 Sprawdza hipotezę podobną do tej, którą weryfikuje test Goldfelda-Quandta; jednak w tym przypadku porównuje się zależność wariancji reszt dla całości obserwacji i wybranego kwantyla (w tym przypadku rzędu 0.5).
 
@@ -361,18 +379,28 @@ Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzec
 #### Normalność
 
 ```{r wykres gęstości normalny MCD}
-plot(density(mod3$residuals), main = "Wykres gęstości rozkładu reszt w porównaniu z rozkładem normalnym")
+par(mfrow = c(1, 3))
+
+plot(density(mod3$residuals), 
+     main = "Wykres gęstości \nrozkładu reszt w \nporównaniu z rozkładem normalnym")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
+
+qqnorm(mod3$residuals, main = "Wykres z linią kwantylową")
+qqline(mod3$residuals, col=2, lwd = 3)
+
+plot(ecdf(mod3$residuals), 
+     main = "Dystrybuanta empiryczna \nw porównaniu z rozkładem \nnormalnym")
+curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
+
+par(mfrow=c(1, 1))
 ```
 
 ```{r wykres qq MCD}
-qqnorm(mod3$residuals, main = "Wykres z linią kwantylową")
-qqline(mod3$residuals, col=2, lwd = 3)
+
 ```
 
 ```{r wykres dystrybuanty normalny MCD}
-plot(ecdf(mod3$residuals), main = "Dystrybuanta empiryczna w porównaniu z rozkładem normalnym")
-curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
+
 ```
 
 ```{r testy normalności MCD}
@@ -451,6 +479,7 @@ Ostatecznie stwierdzamy, że zachodzi autokorelacja reszt.
 Zbadamy, czy szereg jest stacjonarny albo TS (trend stationary).
 
 Skorzystamy z dwóch testów :
+
 - `adf` (Dickey-Fullera) 
 
 $H_0:$ niestacjonarność
@@ -480,38 +509,69 @@ kpss.test(diff(mcd, differences = 1), null = "Trend") #stacj
 
 Po zróżnicowaniu 1 raz, szereg jest zarówno stacjonarny, jak i TS.
 
+```{r}
+n <- ndiffs(mcd)
+```
+
+Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`, co zgadza się z wcześniejszymi wnioskami.
 
 
 
 
+### ARIMA
 
-
-### Arima
-
-ARIMA JEST JESZCZE DO POPRAWKI!!!!!!!
-
-Dobra, ogólnie tutaj nie wiem jak to zrobić, czy nasz w końcu ma tę sezonowość? Bo jeśli ma, to SARIMA podobno, a jeśli nie to ARIMA. Plus, ten szereg chyba jest niestacjonarny, nie? To też przecież musi być stacjonarny i ja nie wiem już nic w końcu :((()))
+Nasz szereg jest niestacjonarny, więc spróbujemy do niego dopasować model ARIMA.
 
 ```{r auto arima MCD}
 
 auto.arima(mcd)
 ```
 
+Według funkcji `auto.arima`, najlepszy model dla badanego szeregu czasowego to ARIMA(0, 1, 0), co oznacza, że nie ma składnika ani `AR` (Auto-Regressive), ani `MA` (Moving Average), a jedynie należy ten szereg zróżnicować jeden raz.
 
-```{r arima MCD}
-#Arima(reszty, order = c(12,0,2)) #tu AIC jakoś 1842, jak sie leci z p do gory, to coraz lepiej, ale tez nie wiem co tu robic w ogóle
+```{r arima(0,1,0) mcd}
+mcd_arima <- arima(mcd, c(0,1,0))
 ```
+
+Kryterium AKAIKE dla modelu ARIMA(0,1,0) wynosi `r mcd_arima$aic`, a wariancja `r mcd_arima$sigma2`
+
+Na wszelki wypadek sprawdzimy dopasowanie kilku innych modeli ARIMA(p, r, q). Przyjmujemy $r=1$, jako że wcześniej otrzymaliśmy, że szereg należy zróżnicować jeden raz. Parametry $p$ i $q$ będą się zmieniać w pętlach od 0 do 3. Chcemy znaleźć najlepszy model ze względu na kryterium Akaike (tj. szukamy jak najmniejszego `aic`).
+
+```{r spr różnich arim mcd}
+akaike <- NULL
+for (p in 0:3){
+  akaike1 <- NULL
+  for (q in 0:3){
+    akaike1 <- c(akaike1, arima(mcd, c(p,1,q))$aic)
+  
+  }
+  akaike <- rbind(akaike, akaike1)
+  
+}
+akaike <- as.data.frame(akaike)
+colnames(akaike) <- c("q=0", "q=1", "q=2", "q=3")
+rownames(akaike) <- c("p=0", "p=1", "p=2", "p=3")
+```
+
+```{r tabelka akaike mcd, results = 'asis'}
+kable(akaike) %>%
+  kable_styling(full_width = T)
+```
+
+Z powyższej tabeli widać, że faktycznie najlepszym modelem jest ARIMA(0, 1, 0).
+
+W takim razie nasz szereg można by zapisać jako:
+$$\varepsilon_t=\epsilon_t$$
+gdzie $\epsilon_t \sim N(0, 4.176)$.
 
 ### Holt - Winters
 
-```{r holt-winters MCD}
-#mcd_hw <- HoltWinters(mcd_sez, seasonal = "additive")
-#pred <- predict(mcd_hw, n.ahead = 4*12, prediction.interval = T, level = 0.9)
-#plot(mcd_hw, pred)
-```
+ZA CHOLERĘ NIE WIEM JAK TYM ZROBIĆ PREDYKCJĘ BEZ SEZONOWOŚCI. Jak ktoś coś wie to niech robi. Pozdro.
 
-Predykcja za pomocą metody Holta-Wintersa. Testując dla różnej liczby okresów naprzód, widzimy, że przedział ufności drastycznie się rozszerza im większe `n.ahead`.
 
+### Podsumowanie analizy notowań McDonald's
+
+Zrobiliśmy analizę. Nie umiemy jej zinterpretować. Jest fajnie.
 
 ## Starbucks
 
