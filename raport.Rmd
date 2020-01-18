@@ -564,9 +564,16 @@ W takim razie nasz szereg można by zapisać jako:
 $$\Delta\varepsilon_t=\epsilon_t$$
 gdzie $\epsilon_t \sim N(0, 4.176)$.
 
-### Holt - Winters
+### Metoda Holta
 
-ZA CHOLERĘ NIE WIEM JAK TYM ZROBIĆ PREDYKCJĘ BEZ SEZONOWOŚCI. Jak ktoś coś wie to niech robi. Pozdro.
+Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcję metodą Holta-Wintersa. Zamiast tego użyjemy metody Holta, korzystając z funkcji `Holt` biblioteki `aTSA`.
+
+```{r}
+library(aTSA)
+plot(Holt(mcd, plot = F)$estimate, main = "Predykcja" , xlab = "Oszacowania", ylab = "Czas",
+     type = "l", lwd = 2, col = "maroon3")
+plot(mcd, type = "l")
+```
 
 
 ### Podsumowanie analizy notowań McDonald's
