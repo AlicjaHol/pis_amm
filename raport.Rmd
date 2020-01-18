@@ -566,7 +566,7 @@ gdzie $\epsilon_t \sim N(0, 4.176)$.
 
 ### Metoda Holta
 
-Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcję metodą Holta-Wintersa. Zamiast tego użyjemy metody Holta, korzystając z funkcji `Holt` biblioteki `aTSA`.
+Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody Holta, korzystając z funkcji `Holt` biblioteki `aTSA`.
 
 ```{r}
 library(aTSA)
