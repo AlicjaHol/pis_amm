@@ -569,9 +569,6 @@ gdzie $\epsilon_t \sim N(0, 4.176)$.
 ZA CHOLERĘ NIE WIEM JAK TYM ZROBIĆ PREDYKCJĘ BEZ SEZONOWOŚCI. Jak ktoś coś wie to niech robi. Pozdro.
 
 
-
-
-
 ### Podsumowanie analizy notowań McDonald's
 
 Zrobiliśmy analizę. Nie umiemy jej zinterpretować. Jest fajnie.
