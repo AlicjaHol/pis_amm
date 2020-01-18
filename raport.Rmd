@@ -176,7 +176,7 @@ par(mfrow = c(1, 1))
 
 
 
-Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność. Jednakże, dokładnośc jest i tak większa niż w przypadku prostej metody ruchomej średniej.
+Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność. Jednakże, dokładność jest i tak większa niż w przypadku prostej metody ruchomej średniej.
 
 ### Dopasowanie wielomianu
 
@@ -561,7 +561,7 @@ kable(akaike) %>%
 Z powyższej tabeli widać, że faktycznie najlepszym modelem jest ARIMA(0, 1, 0).
 
 W takim razie nasz szereg można by zapisać jako:
-$$\varepsilon_t=\epsilon_t$$
+$$\Delta\varepsilon_t=\epsilon_t$$
 gdzie $\epsilon_t \sim N(0, 4.176)$.
 
 ### Holt - Winters
@@ -595,16 +595,64 @@ plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks"
 
 Na rysunku możemy zaobserwować trend rosnący.
 
+### Wydzielanie trendu
+Wydzielamy część deterministyczną. Zastosujemy metody średnich ruchomych (prostą i wykładniczą).
+
+### Ruchoma średnia
+Skorzystamy z napisanej wcześniej funkcji `ruchoma`. Narysujmy wykresy dla kilku parametrów `m`.
+
+```{r ruchoma SBUX}
+par(mfrow=c(2,2))
+ruchoma(sbux, 3, "red")
+ruchoma(sbux, 10, "green")
+ruchoma(sbux, 30, "blue")
+ruchoma(sbux, 50, "pink")
+par(mfrow=c(1,1))
+```
+
+Wraz ze wzrostem parametru `m` otrzymujemy bardziej wygładzony wykres, ale niestety mniej dokładny.
+
+### Metoda wykładniczych wag ruchomej średniej
+
+```{r wykładnicza SBUX}
+par(mfrow=c(2,2))
+wykladnicza(sbux, 0.2, "red")
+wykladnicza(sbux, 0.5, "green")
+wykladnicza(sbux, 0.7, "blue")
+wykladnicza(sbux, 0.9, "pink")
+par(mfrow=c(1,1))
+```
+
+Wraz ze wzrostem parametru $\eta$ uzyskujemy bardziej wygładzony wykres, ale mniejszą dokładność. Jest ona jednak większa niż w przypadku prostej metody ruchomej średniej.
+
 ### Dopasowanie wielomianu
+
+### Metoda różnicowa
+
+```{r różnicowanie - rysunki SBUX}
+par(mfrow = c(2, 3))
+for(i in 1:6){
+plot(diff(sbux, differences = i), type = "l")
+abline(h = 0)}
+```
+
+Z wykresów widać, że największa stabilizacja jest przy różnicowaniu rzędu 2 lub 3, potem rozrzut zaczyna się znacząco zwiększać.
+
+```{r}
+par(mfrow=c(1,1))
+```
 
 ```{r zmienna t SBUX}
 t <- 1:length(sbux)
 ```
 
-#### Model liniowy
+#### Dopasowanie modelu liniowego
 ```{r model liniowy SBUX}
 mod1 <- lm(sbux~t)
-summary(mod1)
+```
+
+```{r model liniowy SBUX stargazer, results = 'asis'}
+stargazer(mod1, header = F)
 ```
 
 Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 79%.
@@ -615,87 +663,78 @@ plot(sbux, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
 abline(mod1, col = "red")
 plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
 abline(h=0)
-par(mfrow = c(1, 1))
 ```
 
+Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie nie doszacowuje, na koniec znowu przeszacowuje.
 
-Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie niedoszacowuje, na koniec znowu przeszacowuje.
-
-#### Drugiego stopnia
+#### Dopasowanie wielomianu drugiego stopnia
 ```{r drugi stopień SBUX}
 mod2 <- lm(sbux~t+I(t^2))
-summary(mod2)
+```
+
+```{r model liniowy SBUX stargazer, results = 'asis'}
+stargazer(mod2, header = F)
 ```
 
 Współczynnik przy t jest nieistotny statystycznie (p-value około 0.08, więc decyzja niejednoznaczna), ale $R^2$ poprawiło się - wynosi teraz około 83%.
 
 ```{r drugi stopień - rysunki SBUX}
 par(mfrow = c(1, 2))
-plot(sbux, type = "l", main = "Model kwadratowy", xlab = "czas", ylab = "USD")
+plot(sbux, type = "l", main = "Model wielomianowy \n drugiego stopnia", xlab = "czas", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red")
-plot(mod2$residuals, type = "l", main = "Reszty modelu kwadratowego", xlab = "czas", ylab = "reszty")
+plot(mod2$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ndrugiego stopnia", xlab = "czas", ylab = "reszty")
 abline(h = 0)
 par(mfrow = c(1, 1))
 ```
 
 Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
 
-#### Trzeciego stopnia
+#### Dopasowanie wielomianu trzeciego stopnia
 ```{r trzeci stopień SBUX}
 mod3 <- lm(sbux~t+I(t^2)+I(t^3))
-summary(mod3)
+```
+
+```{r model liniowy SBUX stargazer, results = 'asis'}
+stargazer(mod3, header = F)
 ```
 
 Wszystkie współczynniki są istotne statystycznie, a $R^2$ znów wzrosło - wynosi około 92% (znaczna poprawa).
 
 ```{r trzeci stopień - rysunki SBUX}
-par(mfrow = c(1, 2))
-plot(sbux, type = "l", main = "Model sześcienny", xlab = "czas", ylab = "USD")
+par(mfrow = c(1,2))
+plot(sbux, type = "l", main = "Model wielomianowy \ntrzeciego stopnia", xlab = "czas", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
-plot(mod3$residuals, type = "l", main = "Reszty modelu sześciennego", xlab = "czas", ylab = "reszty")
+plot(mod3$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ntrzeciego stopnia", xlab = "czas", ylab = "reszty")
 abline(h= 0)
 par(mfrow=c(1,1))
 ```
 
-Reszty modelu sześciennego mają mniejszy rozrzut niż w poprzednich przypadkach (od około -5 do 10).
+Reszty modelu mają mniejszy rozrzut niż w poprzednich przypadkach (od około -5 do 10).
 
+#### Dopasowanie wielomianu czwartego stopnia
 
-### Ruchoma średnia
-
-
-```{r ruchoma 3 SBUX}
-ruchoma(sbux, 3, "red")
+```{r czwarty stopień SBUX}
+mod4 <- lm(sbux~t+I(t^2)+I(t^3)+I(t^4))
 ```
 
-```{r ruchoma 10 SBUX}
-ruchoma(sbux, 10, "green")
+```{r czwarty stopień SBUX stargazer, results='asis'}
+stargazer(mod4, header = F)
 ```
 
-```{r ruchoma 30 SBUX}
-ruchoma(sbux, 30, "blue")
+```{r czwarty stopień - wykresy SBUX}
+par(mfrow = c(1,2))
+plot(sbux, type = "l", main = "Model wielomianowy \nczwartego stopnia", 
+     xlab = "czas", ylab = "USD")
+lines(t, mod4$fitted.values, col = "red")
+plot(mod4$residuals, type = "l", 
+     main = "Reszty modelu \nwielomianowego \nczwartego stopnia", 
+     xlab = "czas", ylab = "reszty")
+abline(h= 0)
+par(mfrow=c(1,1))
 ```
 
-### Metoda wykładniczych wag ruchomej średniej
 
-
-```{r wykładnicza 0.2 SBUX}
-wykladnicza(sbux, 0.2, "red")
-```
-
-```{r wykładnicza 0.5 SBUX}
-wykladnicza(sbux, 0.5, "green")
-
-```
-
-```{r wykładnicza 0.7 SBUX}
-wykladnicza(sbux, 0.7, "blue")
-```
-
-```{r wykładnicza 0.9 SBUX}
-wykladnicza(sbux, 0.9, "yellow")
-```
-
-### Testy na resztach modelu sześciennego
+### Testy na resztach modelu
 
 ```{r losowość reszt SBUX}
 runs.test(mod3$residuals, threshold = 0, plot = T)
@@ -743,17 +782,7 @@ acf(mod3$residuals)
 
 Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce autokorelacja.
 
-### Metoda różnicowa
 
-```{r różnicowanie - rysunki SBUX}
-par(mfrow = c(3, 3))
-for(i in 1:9){
-plot(diff(sbux, differences = i), type = "l")
-abline(h = 0)}
-par(mfrow=c(1,1))
-```
-
-Z wykresów widać, że największa stabilizacja jest przy różnicowaniu rzędu 2 lub 3, potem rozrzut zaczyna się znacząco zwiększać.
 
 ### Stacjonarność
 ```{r stacjonarność - testy SBUX}
