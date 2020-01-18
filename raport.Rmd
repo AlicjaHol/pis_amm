@@ -564,6 +564,46 @@ W takim razie nasz szereg można by zapisać jako:
 $$\Delta\varepsilon_t=\epsilon_t$$
 gdzie $\epsilon_t \sim N(0, 4.176)$.
 
+#### Testy na resztach modelu ARIMA
+
+Dla reszt otrzymanego modelu ARIMA można przeprowadzić testy na jednorodność wariancji oraz normalność rozkładu. Tak jak poprzednio, posłużymy się testami Breuscha-Pagana, Goldfelda-Quandta i Harrisona-McCabe'a dla zbadania jednorodności reszt oraz Kołmogorowa-Smirnova, Lillieforsa-Smirnova, Shapiro-Wilka i Andersona-Darlinga dla zbadania normalności.
+
+NIE WIEM CZEMU, ALE TESTY NA JEDNORODNOŚĆ NIE CHCĄ MI PÓJŚĆ, NIE MAM JUŻ SIŁY OGARNIAĆ CO MU NIE PASUJE.
+
+```{r}
+bptest(mcd_arima)
+gqtest(mcd_arima)
+hmctest(mcd_arima)
+```
+
+Normalność
+
+```{r}
+par(mfrow = c(1,3))
+plot(density(mcd_arima$residuals), main = "Wykres gęstości rozkładu reszt",
+     ylab = "Gęstość")
+curve(dnorm(x,0, sd = sd(mcd_arima$residuals)), col = 2, add = T, lwd = 3)
+
+qqnorm(mcd_arima$residuals, main = "Wykres kwantylowy", xlab = "Wartości teoretyczne", 
+       ylab = "Wartości z próby")
+qqline(mcd_arima$residuals, col = 2)
+
+plot(ecdf(mcd_arima$residuals), main = "Dystybuanta empiryczna")
+curve(pnorm(x,0, sd = sd(mcd_arima$residuals)), add = T, lwd = 3, col = 2)
+par(mfrow = c(1,1))
+```
+
+Z wykresu gęstości rozkładu reszt można wnioskować, że prawdopodobnie ten rozkład charakteryzuje się dużą kurtozą, co powoduje jego "wyciągnięcie" w górę, natomiast z wykresu kwantylowego jasno wynika, że rozkład nie może być normalny. 
+
+```{r}
+ks.test(x = mcd_arima$residuals, y = "pnorm", mean = 0, sd = sd(mcd_arima$residuals))
+lillie.test(mcd_arima$residuals)
+shapiro.test(mcd_arima$residuals)
+ad.test(mcd_arima$residuals)
+```
+
+Wszystkie testy jednoznacznie każą odrzucić hipotezę o normalności rozkładu reszt modelu ARIMA, co potwierdza wnioski, które nasuwają się patrząc na wykresy.
+
 ### Metoda Holta
 
 Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody Holta, korzystając z funkcji `Holt` biblioteki `aTSA`.
