@@ -77,7 +77,7 @@ mcd <- as.numeric(mcd)
 Wykonamy rysunek przedstawiający notowania firmy McDonald's od 01-01-2018 do 31-12-2019
 
 ```{r rysunek notowań MCD}
-plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's")
+plot(mcd, type = "l", xlab = "Indeks notowań", ylab = "USD", main = "Notowania McDonald's")
 ```
  
 Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
@@ -535,11 +535,11 @@ Dla reszt otrzymanego modelu ARIMA można przeprowadzić testy na jednorodność
 NIE WIEM CZEMU, ALE TESTY NA JEDNORODNOŚĆ NIE CHCĄ MI PÓJŚĆ, NIE MAM JUŻ SIŁY OGARNIAĆ CO MU NIE PASUJE.
 
 ```{r}
-library(car)
-leveneTest(as.numeric(mcd_arima$fitted))
-bptest(mcd_arima)
-gqtest(mcd_arima)
-hmctest(mcd_arima)
+#library(car)
+#leveneTest(as.numeric(mcd_arima$fitted))
+#bptest(mcd_arima)
+#gqtest(mcd_arima)
+#hmctest(mcd_arima)
 ```
 
 - Normalność
@@ -720,7 +720,7 @@ Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model n
 mod2 <- lm(sbux~t+I(t^2))
 ```
 
-```{r model liniowy SBUX stargazer, results = 'asis'}
+```{r drugi stopień SBUX stargazer, results = 'asis'}
 stargazer(mod2, header = F)
 ```
 
