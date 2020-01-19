@@ -789,15 +789,27 @@ par(mfrow=c(1,1))
 
 ### Testy na resztach modelu
 
-```{r losowość reszt SBUX}
-Reszty <- mod3$residuals
-runs.test(Reszty, threshold = 0, plot = T)
+### Jednorodność wariancji
+
+- Test `Breuscha-Pagana`
+
+```{r test BP SBUX}
+pv1 <- bptest(mod3)$p.value
 ```
 
-P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt. Wykres także wskazuje na skorelowanie reszt.
+- Test `Goldfelda-Quandta`
 
+```{r test GQ SBUX}
+pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
+```
 
-Wykresy normalności
+- Test `Harrisona-McCabe'a`
+
+```{r test HMC SBUX}
+pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
+```
+
+### Normalność
 
 ```{r wykresy normalności SBUX}
 plot(density(mod3$residuals), main = "Wykres gęstości \n rozkładu reszt", 
@@ -823,13 +835,48 @@ ad.test(mod3$residuals)
 
 W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipotezę o rozkładzie normalnym.
 
-Badanie autokorelacji
+### Autokorelacja
+
+- Test serii
+
+```{r losowość reszt SBUX}
+Reszty <- mod3$residuals
+runs.test(Reszty, threshold = 0, plot = T)
+```
+
+P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt. Wykres także wskazuje na skorelowanie reszt.
+
+- Test Durbina-Watsona
+
+```{r test DW SBUX}
+dwtest <- dwtest(mod3, order.by = ~t)$p.value
+```
+
+- Test Breuscha-Godfreya
+
+```{r test BG MCD}
+bgtest <- bgtest(mod3, order.by = ~t, order = 3)$p.value
+```
+
+- Wykres ACF (funkcji autokorelacji)
 
 ```{r test ACF - korelacja SBUX}
-acf(mod3$residuals, main = "Funkcja autokorelacji")
+acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
 ```
 
 Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce autokorelacja.
+
+ Wykres PACF (cząstkowej funkcji autokorelacji)
+
+```{r test PACF SBUX}
+pacf(mod3$residuals, main = "Cząstkowa funkcja autokorelacji")
+```
+
+- Test Ljunga-Boxa
+
+```{r box-ljung SBUX}
+lbox <- Box.test(mod3$residuals, type = "Ljung-Box")$p.value
+```
 
 ### Stacjonarność
 
@@ -841,17 +888,30 @@ kpss.test(sbux, null = "Trend")
 
 Szereg nie jest ani stacjonarny ani TS.
 
-
 ```{r stacjonarność - testy po zróżnicowaniu SBUX}
-adf.test(diff(sbux, differences = 1)) #st
-kpss.test(diff(sbux, differences = 1)) #st
-kpss.test(diff(sbux, differences = 1), null = "Trend") #st
+adf.test(diff(sbux, differences = 1)) 
+kpss.test(diff(sbux, differences = 1))
+kpss.test(diff(sbux, differences = 1), null = "Trend") 
 ```
 
 Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
 
+```{r}
+n <- ndiffs(sbux)
+```
+
+Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`.
+
+### ARIMA
+
 ```{r auto-arima SBUX}
 auto.arima(sbux)
+```
+
+Najlepszy model dla badanego szeregu czasowego to ARIMA(0, 1, 0).
+
+```{r arima(0,1,0) SBUX}
+sbux_arima <- arima(sbux, c(0,1,0))
 ```
 
 ### Podsumowanie analizy notowań Starbucks
