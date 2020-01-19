@@ -64,14 +64,7 @@ library(tables)
 
 McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejmuje ona ponad 30 tys. restauracji, każdego dnia obsługujących ponad 46 mln osób w 119 krajach. Wartość marki McDonald's szacuje się na 24,7 mld dolarów.
 
-
-
-
 ### Wczytanie danych i rysunki
-
-
-
-
 
 Dane pobieramy z `yahoo finance` za pomocą funkcji `get.hist.quote` i zamieniamy na typ numeryczny.
 
@@ -88,7 +81,6 @@ plot(mcd, type = "l", xlab = "czas", ylab = "USD", main = "Notowania McDonald's"
 ```
  
 Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
-
 
 ### Wydzielanie trendu
 
@@ -119,8 +111,6 @@ ruchoma <- function(x, m, kolor){
 
 Narysujemy wykresy dla kilku parametrów `m`.
 
-
-
 ```{r ruchoma MCD}
 par(mfrow = c(2, 2))
 ruchoma(mcd, 3, "red")
@@ -129,7 +119,6 @@ ruchoma(mcd, 30, "blue")
 ruchoma(mcd, 50, "pink")
 par(mfrow = c(1, 1))
 ```
-
 
 
 Jak widać, im większy parametr `m` przyjmiemy, tym bardziej wygładzony wykres uzyskujemy, ale też mniej dokładny.
@@ -163,8 +152,6 @@ wykladnicza <- function(x, mi, kolor){
 ```
 
 
-
-
 ```{r wykładnicza MCD}
 par(mfrow = c(2, 2))
 wykladnicza(mcd, 0.2, "red")
@@ -173,7 +160,6 @@ wykladnicza(mcd, 0.7, "blue")
 wykladnicza(mcd, 0.9, "pink")
 par(mfrow = c(1, 1))
 ```
-
 
 
 Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność. Jednakże, dokładność jest i tak większa niż w przypadku prostej metody ruchomej średniej.
@@ -211,7 +197,6 @@ mod1 <- lm(mcd~t)
 ```{r model liniowy MCD stargazer, results = 'asis'}
 stargazer(mod1, header = F)
 ```
-
 
 Zarówno wyraz wolny, jak i współczynnik kierunkowy są istotne statystycznie. $R^2$ wynosi około 74%.
 
@@ -255,7 +240,7 @@ Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
 #### Dopasowanie wielomianem trzeciego stopnia
 
-
+Jako kolejny zbudowany zostanie model wielomianowy trzeciego stopnia.
 
 ```{r trzeci stopień MCD}
 mod3 <- lm(mcd~t+I(t^2)+I(t^3))
@@ -306,24 +291,15 @@ par(mfrow=c(1,1))
 
 W modelu wielomianowym czwartego stopnia współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu wielomianowego 3 stopnia. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model wielomianowy 3 stopnia.
 
-
-
-
-
-
-
-
 ### Testy na resztach modelu
 
 Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz sprawdzimy, czy reszty tego modelu spełniają założenia:
-
-- losowość
 
 - jednorodność wariancji
 
 - normalność
 
-
+- losowość
 
 
 #### Jednorodność wariancji
@@ -382,26 +358,20 @@ Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzec
 par(mfrow = c(1, 3))
 
 plot(density(mod3$residuals), 
-     main = "Wykres gęstości \nrozkładu reszt w \nporównaniu z rozkładem normalnym")
+     main = "Wykres gęstości rozkładu reszt", ylab = "Gęstość")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 
-qqnorm(mod3$residuals, main = "Wykres z linią kwantylową")
+qqnorm(mod3$residuals, main = "Wykres kwantylowy", xlab = "Wartości teoretyczne",
+       ylab = "Wartość z próby")
 qqline(mod3$residuals, col=2, lwd = 3)
 
 plot(ecdf(mod3$residuals), 
-     main = "Dystrybuanta empiryczna \nw porównaniu z rozkładem \nnormalnym")
+     main = "Dystrybuanta empiryczna")
 curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 
 par(mfrow=c(1, 1))
 ```
 
-```{r wykres qq MCD}
-
-```
-
-```{r wykres dystrybuanty normalny MCD}
-
-```
 
 ```{r testy normalności MCD}
 
@@ -515,9 +485,6 @@ n <- ndiffs(mcd)
 
 Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`, co zgadza się z wcześniejszymi wnioskami.
 
-
-
-
 ### ARIMA
 
 Nasz szereg jest niestacjonarny, więc spróbujemy do niego dopasować model ARIMA.
@@ -571,6 +538,8 @@ Dla reszt otrzymanego modelu ARIMA można przeprowadzić testy na jednorodność
 NIE WIEM CZEMU, ALE TESTY NA JEDNORODNOŚĆ NIE CHCĄ MI PÓJŚĆ, NIE MAM JUŻ SIŁY OGARNIAĆ CO MU NIE PASUJE.
 
 ```{r}
+library(car)
+leveneTest(as.numeric(mcd_arima$fitted))
 bptest(mcd_arima)
 gqtest(mcd_arima)
 hmctest(mcd_arima)
@@ -604,15 +573,47 @@ ad.test(mcd_arima$residuals)
 
 Wszystkie testy jednoznacznie każą odrzucić hipotezę o normalności rozkładu reszt modelu ARIMA, co potwierdza wnioski, które nasuwają się patrząc na wykresy.
 
-### Metoda Holta
+### Prognozowanie
 
-Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody Holta, korzystając z funkcji `Holt` biblioteki `aTSA`.
+#### Metoda dryftu
+
+Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody dryftu, będącej odmianą metody naiwnej. Dzięki niej można zaobserwować trend. 
 
 ```{r}
-library(aTSA)
-plot(Holt(mcd, plot = F)$estimate, main = "Predykcja" , xlab = "Oszacowania", ylab = "Czas",
-     type = "l", lwd = 2, col = "maroon3")
+prognoza <- rwf(mcd, drift = T, h  = 30)
+prognoza <- as.data.frame(prognoza)[,1]
+plot(mcd, type = "l", main =  "Prognoza z całości danych na najbliższe 30 notowań", xlim = c(0,515), 
+     xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+t1 <- 503:(503+length(prognoza)-1)
+lines(t1, prognoza, col = 3, lwd = 2)
+```
+
+
+
+```{r}
+prognoza <- rwf(mcd[480:500], drift = T, h  = 30)
+prognoza <- as.data.frame(prognoza)[,1]
+plot(mcd, type = "l", main =  "Prognoza z ostatnich 20 notowań na najbliższe 30", xlim = c(0,515), 
+     xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+t1 <- 503:(503+length(prognoza)-1)
+lines(t1, prognoza, col = 3, lwd = 2)
+```
+
+Z racji braku sezonowości, prognoza nie uwzględnia wahań, a jedynie ogólnie występujący trend. Z tego względu jest dość niedokładna i bardziej wiarygodne wyniki można uzyskać prognozując na krótsze odcinki czasu. Widać to z porównania powyższych wykresów - nachylenie linii prognozy, biorącej pod uwagę wszystkie wartości notowań jest mniejsze i nie uwzględnia istotnych zmian, które zaszły pomiędzy pierwszym a ostatnim notowaniem. 
+
+#### Przewidywania z modelu
+
+Próbujemy przewidywać z modelu wielomianowego 3 stopnia.
+
+```{r}
+wsp <- mod3$coefficients
+funkcja <- function(t){
+  wsp[1]+wsp[2]*t+wsp[3]*t^2+wsp[4]*t^3
+}
+t2 <- 503:520
 plot(mcd, type = "l")
+lines(t2, funkcja(t2))
+
 ```
 
 
