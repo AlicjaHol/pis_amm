@@ -104,7 +104,7 @@ ruchoma <- function(x, m, kolor){
     f[i] <- mean(x[(i-m):i])
   }
   tytul = paste("Średnia ruchoma rzędu ", m)
-  plot(x, type = "l", main = tytul)
+  plot(x, type = "l", main = tytul, xlab = "Indeks notowań", ylab = "USD")
   lines((m+1):t, f[(m+1):t], lwd = 2, col = kolor)
 }
 ```
@@ -145,8 +145,8 @@ wykladnicza <- function(x, mi, kolor){
   for (i in 2:length(x)){
     f[i] <- (1-mi)/(1-mi^i)*(x[i]+mi*(1-mi^(i-1))/(1-mi)*f[i-1])
   }
-  tytul = paste("średnia ruchoma z wagami wykładniczymi z parametrem ", mi)
-  plot(x, type = "l", main = tytul)
+  tytul = paste("średnia ruchoma \n z wagami wykładniczymi \n z parametrem", mi)
+  plot(x, type = "l", main = tytul, xlab = "Indeks notowań", ylab = "USD")
   lines(1:length(x), f, lwd = 2, col = kolor)
 }
 ```
@@ -173,11 +173,14 @@ Za pomocą metody różnicowej sprawdzimy, jaki stopień wielomianu byłby najba
 ```{r różnicowanie - rysunki MCD}
 par(mfrow = c(2, 3))
 for(i in 1:6){
-plot(diff(mcd, differences = i), type = "l")
+ylab <- paste("różnice rzędu ", i)
+plot(diff(mcd, differences = i), type = "l", xlab = "Indeks notowań", ylab = ylab)
 abline(h = 0)}
 par(mfrow=c(1,1))
 ```
 
+
+Z wykresów można wysnuć wniosek, że największą stabilizację osiągamy przy różnicowaniu rzędu pierwszego lub drugiego. Wraz ze wzrostem rzędu różnicowania, wahania ulegają znacznemu rozszerzeniu.
 
 Spróbujemy do danych dopasować wielomian stopnia 1, 2, 3 i 4.
 
@@ -227,11 +230,11 @@ Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 75%, a 
 ```{r drugi stopień - wykresy MCD}
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model wielomianowy \n drugiego stopnia", 
-     xlab = "czas", ylab = "USD")
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red")
 plot(mod2$residuals, type = "l", 
      main = "Reszty modelu \nwielomianowego \ndrugiego stopnia", 
-     xlab = "czas", ylab = "reszty")
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h = 0)
 par(mfrow = c(1, 1))
 ```
@@ -256,11 +259,11 @@ W modelu wielomianowym trzeciego stopnia wszystkie współczynniki są istotne s
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", 
      main = "Model wielomianowy \ntrzeciego stopnia", 
-     xlab = "czas", ylab = "USD")
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
 plot(mod3$residuals, type = "l", 
      main = "Reszty modelu \nwielomianowego \ntrzeciego stopnia", 
-     xlab = "czas", ylab = "reszty")
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h= 0)
 par(mfrow = c(1, 1))
 ```
@@ -280,11 +283,11 @@ stargazer(mod4, header = F)
 ```{r czwarty stopień - wykresy MCD}
 par(mfrow = c(1, 2))
 plot(mcd, type = "l", main = "Model wielomianowy \nczwartego stopnia", 
-     xlab = "czas", ylab = "USD")
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod4$fitted.values, col = "red")
 plot(mod3$residuals, type = "l", 
      main = "Reszty modelu \nwielomianowego \nczwartego stopnia", 
-     xlab = "czas", ylab = "reszty")
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h= 0)
 par(mfrow=c(1,1))
 ```
@@ -313,8 +316,6 @@ $H_0:$ jednorodność wariancji reszt.
 $H_1:$ wariancja reszt zależy od zmiennych objaśniających w modelu.
 
 ```{r test BP MCD}
-
-bptest(mod3)
 pv1 <- bptest(mod3)$p.value
 ```
 
@@ -329,7 +330,6 @@ $H_0:$ wariancja reszt jest równa w obu grupach.
 $H_1:$ wariancja reszt różni się w obu grupach.
 
 ```{r test GQ MCD}
-gqtest(mod3, order.by = ~fitted(mod3))
 pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
@@ -344,7 +344,6 @@ $H_0:$ wariancja reszt jest równa w porównywanych grupach.
 $H_1:$ wariancja reszt różni się się w porównywanych grupach.
 
 ```{r test HMC MCD}
-hmctest(mod3, order.by = ~fitted(mod3))
 pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
@@ -358,7 +357,7 @@ Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzec
 par(mfrow = c(1, 3))
 
 plot(density(mod3$residuals), 
-     main = "Wykres gęstości rozkładu reszt", ylab = "Gęstość")
+     main = "Wykres gęstości \n rozkładu reszt", ylab = "Gęstość")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 
 qqnorm(mod3$residuals, main = "Wykres kwantylowy", xlab = "Wartości teoretyczne",
@@ -375,14 +374,14 @@ par(mfrow=c(1, 1))
 
 ```{r testy normalności MCD}
 
-ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
-lillie.test(mod3$residuals)
-shapiro.test(mod3$residuals)
-ad.test(mod3$residuals)
+kstest <- ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))$p.value
+lillie <- lillie.test(mod3$residuals)$p.value
+shapiro <- shapiro.test(mod3$residuals)$p.value
+adtest <- ad.test(mod3$residuals)$p.value
 
 ```
 
-Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podstaw do odrzucenia, p-value około 0.14). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
+Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podstaw do odrzucenia, p-value około `r kstest`). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
 
 #### Autokorelacja
 
@@ -393,25 +392,24 @@ $H_0:$ losowość
 $H_1:$ brak losowości
 
 ```{r losowość reszt MCD}
-
-runs.test(mod3$residuals, threshold = 0, plot = T)
+Reszty <- mod3$residuals
+runs.test(Reszty, threshold = 0, plot = T)
 ```
 
-P-value bliskie zero, odrzucamy hipotezę o losowości reszt.
+P-value bliskie zero, odrzucamy hipotezę o losowości reszt. Także na wykresie widać, że prawdopodobnie istnieje zależność między kolejnymi resztami, prawdopodobnie występuje autokorelacja.
 
 - Test Durbina-Watsona
 
 Weryfikuje hipotezę o niezależności reszt, sprawdzając, czy istotna jest autokorelacja reszt rzędu pierwszego.
 
 ```{r test DW MCD}
-
-dwtest(mod3, order.by = ~t)
+dwtest <- dwtest(mod3, order.by = ~t)$p.value
 ```
 
 - Test Breuscha-Godfreya
 
 ```{r test BG MCD}
-bgtest(mod3, order.by = ~t, order = 3)
+bgtest <- bgtest(mod3, order.by = ~t, order = 3)$p.value
 ```
 
 - Wykres ACF (funkcji autokorelacji)
@@ -420,7 +418,7 @@ bgtest(mod3, order.by = ~t, order = 3)
 acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
 ```
 
-Oba testy wskazują, że istnieje seryjna korelacja błędów. Również z wykresu funkcji `acf` możemy wyciągnąć te same wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
+Oba testy wskazują, że istnieje seryjna korelacja błędów, p-value w obu przypadkach jest praktycznie równe zero. Również z wykresu funkcji `acf` możemy wyciągnąć te same wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
 
 - Wykres PACF (cząstkowej funkcji autokorelacji)
 
@@ -437,7 +435,7 @@ $H_0:$ niezależność
 $H_1:$ brak niezależności
 
 ```{r box-ljung MCD}
-Box.test(mod3$residuals, type = "Ljung-Box")
+lbox <- Box.test(mod3$residuals, type = "Ljung-Box")$p.value
 ```
 
 P-value jest bardzo bliskie zero, odrzucamy hipotezę zerową, reszty nie są niezależne.
@@ -463,18 +461,17 @@ $H_0:$ stacjonarność
 $H_1:$ niestacjonarność
 
 ```{r testy stacjonarność MCD}
-adf.test(mcd) 
-kpss.test(mcd) 
-kpss.test(mcd, null = "Trend") 
-
+adf <- adf.test(mcd)$p.value 
+kpss <- kpss.test(mcd)$p.value 
+kpsst <- kpss.test(mcd, null = "Trend")$p.value 
 ```
 
 Po wykonaniu testów otrzymujemy wniosek, że szereg nie jest stacjonarny, ani stacjonarny wobec trendu.
 
 ```{r testy stacjonarność - różnicowanie MCD}
-adf.test(diff(mcd, differences = 1)) #stacj
-kpss.test(diff(mcd, differences = 1)) #stacj
-kpss.test(diff(mcd, differences = 1), null = "Trend") #stacj
+adf2 <- adf.test(diff(mcd, differences = 1))$p.value
+kpss2 <- kpss.test(diff(mcd, differences = 1))$p.value 
+kpsst2 <- kpss.test(diff(mcd, differences = 1), null = "Trend")$p.value
 ```
 
 Po zróżnicowaniu 1 raz, szereg jest zarówno stacjonarny, jak i TS.
@@ -500,7 +497,7 @@ Według funkcji `auto.arima`, najlepszy model dla badanego szeregu czasowego to 
 mcd_arima <- arima(mcd, c(0,1,0))
 ```
 
-Kryterium AKAIKE dla modelu ARIMA(0,1,0) wynosi `r mcd_arima$aic`, a wariancja `r mcd_arima$sigma2`
+Kryterium Akaike dla modelu ARIMA(0,1,0) wynosi `r mcd_arima$aic`, a wariancja `r mcd_arima$sigma2`
 
 Na wszelki wypadek sprawdzimy dopasowanie kilku innych modeli ARIMA(p, r, q). Przyjmujemy $r=1$, jako że wcześniej otrzymaliśmy, że szereg należy zróżnicować jeden raz. Parametry $p$ i $q$ będą się zmieniać w pętlach od 0 do 3. Chcemy znaleźć najlepszy model ze względu na kryterium Akaike (tj. szukamy jak najmniejszego `aic`).
 
@@ -545,11 +542,11 @@ gqtest(mcd_arima)
 hmctest(mcd_arima)
 ```
 
-Normalność
+- Normalność
 
 ```{r}
 par(mfrow = c(1,3))
-plot(density(mcd_arima$residuals), main = "Wykres gęstości rozkładu reszt",
+plot(density(mcd_arima$residuals), main = "Wykres gęstości \n rozkładu reszt",
      ylab = "Gęstość")
 curve(dnorm(x,0, sd = sd(mcd_arima$residuals)), col = 2, add = T, lwd = 3)
 
@@ -582,8 +579,8 @@ Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem prz
 ```{r}
 prognoza <- rwf(mcd, drift = T, h  = 30)
 prognoza <- as.data.frame(prognoza)[,1]
-plot(mcd, type = "l", main =  "Prognoza z całości danych na najbliższe 30 notowań", xlim = c(0,515), 
-     xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+plot(mcd, type = "l", main =  "Prognoza z całości danych na najbliższe 30 notowań",
+     xlim = c(0,515), xlab = "Indeks notowań", ylab = "USD", lwd = 2)
 t1 <- 503:(503+length(prognoza)-1)
 lines(t1, prognoza, col = 3, lwd = 2)
 ```
@@ -593,8 +590,8 @@ lines(t1, prognoza, col = 3, lwd = 2)
 ```{r}
 prognoza <- rwf(mcd[480:500], drift = T, h  = 30)
 prognoza <- as.data.frame(prognoza)[,1]
-plot(mcd, type = "l", main =  "Prognoza z ostatnich 20 notowań na najbliższe 30", xlim = c(0,515), 
-     xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+plot(mcd, type = "l", main =  "Prognoza z ostatnich 20 notowań na najbliższe 30",
+     xlim = c(0,515), xlab = "Indeks notowań", ylab = "USD", lwd = 2)
 t1 <- 503:(503+length(prognoza)-1)
 lines(t1, prognoza, col = 3, lwd = 2)
 ```
@@ -603,7 +600,7 @@ Z racji braku sezonowości, prognoza nie uwzględnia wahań, a jedynie ogólnie 
 
 #### Przewidywania z modelu
 
-Próbujemy przewidywać z modelu wielomianowego 3 stopnia.
+Próbujemy przewidywać z modelu wielomianowego trzeciego stopnia.
 
 ```{r}
 wsp <- mod3$coefficients
@@ -635,10 +632,10 @@ sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
 sbux<- as.numeric(sbux)
 ```
 
-Wykonamy rysunek przedstawiający notowania firmy Starbucks od 01-01-2018 do 31-12-2019.
+Wykonamy rysunek przedstawiający notowania firmy Starbucks z ostatnich dwóch lat.
 
 ```{r rysunek notowań SBUX}
-plot(sbux, type = "l", xlab = "czas", ylab = "USD", main = "Notowania Starbucks")
+plot(sbux, type = "l", xlab = "Indeks notowań", ylab = "USD", main = "Notowania Starbucks")
 ```
 
 Na rysunku możemy zaobserwować trend rosnący.
@@ -680,7 +677,8 @@ Wraz ze wzrostem parametru $\eta$ uzyskujemy bardziej wygładzony wykres, ale mn
 ```{r różnicowanie - rysunki SBUX}
 par(mfrow = c(2, 3))
 for(i in 1:6){
-plot(diff(sbux, differences = i), type = "l")
+plot(diff(sbux, differences = i), type = "l",
+     xlab = "Numer obserwacji", ylab = paste("Różnicowanie rzędu ", i))
 abline(h = 0)}
 ```
 
@@ -695,6 +693,7 @@ t <- 1:length(sbux)
 ```
 
 #### Dopasowanie modelu liniowego
+
 ```{r model liniowy SBUX}
 mod1 <- lm(sbux~t)
 ```
@@ -707,9 +706,10 @@ Wszystkie współczynniki są istotne statystycznie. $R^2$ wynosi około 79%.
 
 ```{r model liniowy - rysunki SBUX}
 par(mfrow = c(1, 2))
-plot(sbux, type = "l", main = "Model liniowy", xlab = "czas", ylab = "USD")
+plot(sbux, type = "l", main = "Model liniowy", xlab = "Indeks notowań", ylab = "USD")
 abline(mod1, col = "red")
-plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego", xlab = "czas", ylab = "reszty")
+plot(mod1$residuals, type = "l", main = "Reszty modelu liniowego",
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h=0)
 ```
 
@@ -728,9 +728,11 @@ Współczynnik przy t jest nieistotny statystycznie (p-value około 0.08, więc 
 
 ```{r drugi stopień - rysunki SBUX}
 par(mfrow = c(1, 2))
-plot(sbux, type = "l", main = "Model wielomianowy \n drugiego stopnia", xlab = "czas", ylab = "USD")
+plot(sbux, type = "l", main = "Model wielomianowy \n drugiego stopnia",
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod2$fitted.values, col = "red")
-plot(mod2$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ndrugiego stopnia", xlab = "czas", ylab = "reszty")
+plot(mod2$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ndrugiego stopnia",
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h = 0)
 par(mfrow = c(1, 1))
 ```
@@ -742,7 +744,7 @@ Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
 mod3 <- lm(sbux~t+I(t^2)+I(t^3))
 ```
 
-```{r model liniowy SBUX stargazer, results = 'asis'}
+```{r trzeci stopień SBUX stargazer, results = 'asis'}
 stargazer(mod3, header = F)
 ```
 
@@ -750,9 +752,11 @@ Wszystkie współczynniki są istotne statystycznie, a $R^2$ znów wzrosło - wy
 
 ```{r trzeci stopień - rysunki SBUX}
 par(mfrow = c(1,2))
-plot(sbux, type = "l", main = "Model wielomianowy \ntrzeciego stopnia", xlab = "czas", ylab = "USD")
+plot(sbux, type = "l", main = "Model wielomianowy \ntrzeciego stopnia",
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod3$fitted.values, col = "red")
-plot(mod3$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ntrzeciego stopnia", xlab = "czas", ylab = "reszty")
+plot(mod3$residuals, type = "l", main = "Reszty modelu \nwielomianowego \ntrzeciego stopnia",
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h= 0)
 par(mfrow=c(1,1))
 ```
@@ -772,11 +776,11 @@ stargazer(mod4, header = F)
 ```{r czwarty stopień - wykresy SBUX}
 par(mfrow = c(1,2))
 plot(sbux, type = "l", main = "Model wielomianowy \nczwartego stopnia", 
-     xlab = "czas", ylab = "USD")
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t, mod4$fitted.values, col = "red")
 plot(mod4$residuals, type = "l", 
      main = "Reszty modelu \nwielomianowego \nczwartego stopnia", 
-     xlab = "czas", ylab = "reszty")
+     xlab = "Indeks notowań", ylab = "Reszty")
 abline(h= 0)
 par(mfrow=c(1,1))
 ```
@@ -785,33 +789,29 @@ par(mfrow=c(1,1))
 ### Testy na resztach modelu
 
 ```{r losowość reszt SBUX}
-runs.test(mod3$residuals, threshold = 0, plot = T)
+Reszty <- mod3$residuals
+runs.test(Reszty, threshold = 0, plot = T)
 ```
-P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt
+
+P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt. Wykres także wskazuje na skorelowanie reszt.
+
 
 Wykresy normalności
 
-```{r wykres gęstośi normalny SBUX}
-plot(density(mod3$residuals))
+```{r wykresy normalności SBUX}
+plot(density(mod3$residuals), main = "Wykres gęstości \n rozkładu reszt", 
+     ylab = "Gęstość")
 curve(dnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd = 2)
 
-```
-
-Wykres gęstości empirycznej znacząco różni się od gęstości rozkładu normalnego. Bardzo znacząco.
-
-```{r wykres qq SBUX}
-qqnorm(mod3$residuals)
+qqnorm(mod3$residuals, main = "Wykres kwantylowy",
+       xlab = "Wartości teoretyczne", ylab = "Wartości z próby")
 qqline(mod3$residuals, col=2, lwd = 3)
-```
 
-Tutaj także wyraźne odchyłki.
-
-```{r wykres dystrybuanty normalny SBUX}
-plot(ecdf(mod3$residuals))
+plot(ecdf(mod3$residuals), main = "Dystrybuanta empiryczna")
 curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 ```
 
-Nawet na dystrybuancie widać, że rozkład normalny wygląda inaczej.
+Wykres gęstości rozkładu reszt bardzo znacząco różni się od gęstości rozkładu normalnego. Widać, że rozkład jest co najmniej dwumodalny i ma zbyt silną asymetrię prawostronną. Na wykresie kwantylowym widać znaczące odchyłki od linii kwantylowej. Podobne zjawisko można zaobserwować na wykresie dystrybuanty empirycznej.
 
 ```{r testy normalności SBUX}
 ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
@@ -825,19 +825,17 @@ W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipote
 Badanie autokorelacji
 
 ```{r test ACF - korelacja SBUX}
-acf(mod3$residuals)
+acf(mod3$residuals, main = "Funkcja autokorelacji")
 ```
 
 Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce autokorelacja.
 
-
-
 ### Stacjonarność
-```{r stacjonarność - testy SBUX}
-adf.test(sbux) #niest
-kpss.test(sbux) #niest
-kpss.test(sbux, null = "Trend") #niest
 
+```{r stacjonarność - testy SBUX}
+adf.test(sbux)
+kpss.test(sbux)
+kpss.test(sbux, null = "Trend")
 ```
 
 Szereg nie jest ani stacjonarny ani TS.
@@ -855,5 +853,6 @@ Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
 auto.arima(sbux)
 ```
 
+### Podsumowanie analizy notowań Starbucks
 
 
