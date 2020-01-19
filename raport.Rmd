@@ -12,6 +12,7 @@ output:
     theme: united
     toc: yes
     toc_depth: 4
+  lang: pl
 editor_options:
   chunk_output_type: console
 ---
