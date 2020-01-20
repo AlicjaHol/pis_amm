@@ -7,11 +7,11 @@ output:
   
   pdf_document:
     toc: yes
-    toc_depth: '4'
+    toc_depth: '2'
   html_document:
     theme: united
     toc: yes
-    toc_depth: 4
+    toc_depth: 2
   lang: pl
 editor_options:
   chunk_output_type: console
