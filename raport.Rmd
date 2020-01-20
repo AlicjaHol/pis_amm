@@ -18,7 +18,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F, dev = "cairo_pdf")
 ```
 
 # Matylda!! (to do, to do, to do to do to do to doooooooo)
@@ -409,7 +409,7 @@ dwtest <- dwtest(mod3, order.by = ~t)$p.value
 
 - Test Breuscha-Godfreya
 
-```{r test BG MCD}
+```{r test BG mod3 MCD}
 bgtest <- bgtest(mod3, order.by = ~t, order = 3)$p.value
 ```
 
@@ -913,6 +913,16 @@ Najlepszy model dla badanego szeregu czasowego to ARIMA(0, 1, 0).
 ```{r arima(0,1,0) SBUX}
 sbux_arima <- arima(sbux, c(0,1,0))
 ```
+
+```{r}
+tsdiag(sbux_arima)
+```
+
+```{r}
+tsdisplay(residuals(sbux_arima))
+```
+
+
 
 ### Podsumowanie analizy notowań Starbucks
 
