@@ -5,13 +5,13 @@ author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
   
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
   html_document:
     theme: united
     toc: yes
     toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
   lang: pl
 editor_options:
   chunk_output_type: console
@@ -310,7 +310,7 @@ Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz spr
 
 Aby zbadać czy jednorodność reszt posłużymy się kilkoma popularnymi testami.
 
-- Test `Breuscha-Pagana`
+- Test Breuscha-Pagana
 
 $H_0:$ jednorodność wariancji reszt.
 
@@ -320,9 +320,9 @@ $H_1:$ wariancja reszt zależy od zmiennych objaśniających w modelu.
 pv1 <- bptest(mod3)$p.value
 ```
 
-P-value wynosi `r sprintf("%.10f",pv1)`, zatem Wug testu Breuscha-Pagana należałoby odrzucić hipotezę o jednorodności wariancji reszt.
 
-- Test `Goldfelda-Quandta`
+
+- Test Goldfelda-Quandta
 
 Weryfikacja hipotezy polega na podziale danych na dwie grupy i sprawdzeniu, czy w obu wariancja ma taką samą wartość.
 
@@ -334,9 +334,9 @@ $H_1:$ wariancja reszt różni się w obu grupach.
 pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
-P-value wynosi `r sprintf("%.3f", pv2)`, zatem nie ma podstaw do odrzucenia hipotezy o równości wariancji.
 
-- Test `Harrisona-McCabe'a`
+
+- Test Harrisona-McCabe'a
 
 Sprawdza hipotezę podobną do tej, którą weryfikuje test Goldfelda-Quandta; jednak w tym przypadku porównuje się zależność wariancji reszt dla całości obserwacji i wybranego kwantyla (w tym przypadku rzędu 0.5).
 
@@ -348,9 +348,22 @@ $H_1:$ wariancja reszt różni się się w porównywanych grupach.
 pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
-P-value wynosi jest praktycznie równe 0, należy przyjąć hipotezę alternatywną, czyli wariancja reszt modelu ulega zmianie.
 
-Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzeciego stopnia nie są jednorodne.
+
+```{r}
+pvals <- cbind(c("Test", "Breuscha-Pagana", "Goldfelda-Quandta", "Harrisona-McCabe'a"), c("P-value", pv1, pv2, pv3))
+
+
+```
+
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+Z powyższej tabeli widać, że testy Breuscha-Pagana oraz Harrisona-McCabe'a odrzucają hipotezę o jednorodności wariancji. Dla testu Goldfelda-Quandta nie mieliśmy podstaw do odrzucenia hipotezy o jednorodności.
+
+Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzeciego stopnia nie są homoskedastyczne.
 
 #### Normalność
 
@@ -379,10 +392,18 @@ kstest <- ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residu
 lillie <- lillie.test(mod3$residuals)$p.value
 shapiro <- shapiro.test(mod3$residuals)$p.value
 adtest <- ad.test(mod3$residuals)$p.value
-
+pvals <- cbind(c("Test", "Kołmogorowa-Smirnova", "Kołmogorowa-Lillieforsa", 
+                 "Shapiro-Wilka", "Andersona-Darlinga"),
+               c("P-value", kstest, lillie, shapiro, adtest))
 ```
 
-Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podstaw do odrzucenia, p-value około `r kstest`). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+
+Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podstaw do odrzucenia). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
 
 #### Autokorelacja
 
@@ -395,6 +416,7 @@ $H_1:$ brak losowości
 ```{r losowość reszt MCD}
 Reszty <- mod3$residuals
 runs.test(Reszty, threshold = 0, plot = T)
+runstest <- runs.test(Reszty, threshold = 0, plot = T)$p.value
 ```
 
 P-value bliskie zero, odrzucamy hipotezę o losowości reszt. Także na wykresie widać, że prawdopodobnie istnieje zależność między kolejnymi resztami, prawdopodobnie występuje autokorelacja.
@@ -413,22 +435,6 @@ dwtest <- dwtest(mod3, order.by = ~t)$p.value
 bgtest <- bgtest(mod3, order.by = ~t, order = 3)$p.value
 ```
 
-- Wykres ACF (funkcji autokorelacji)
-
-```{r test ACF - korelacja MCD}
-acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
-```
-
-Oba testy wskazują, że istnieje seryjna korelacja błędów, p-value w obu przypadkach jest praktycznie równe zero. Również z wykresu funkcji `acf` możemy wyciągnąć te same wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
-
-- Wykres PACF (cząstkowej funkcji autokorelacji)
-
-```{r test PACF MCD}
-pacf(mod3$residuals, main = "Cząstkowa funkcja autokorelacji")
-```
-
-Wykres `PACF` jako jedyny nie wykrywa autokorelacji.
-
 - Test Ljunga-Boxa
 
 $H_0:$ niezależność
@@ -439,9 +445,31 @@ $H_1:$ brak niezależności
 lbox <- Box.test(mod3$residuals, type = "Ljung-Box")$p.value
 ```
 
-P-value jest bardzo bliskie zero, odrzucamy hipotezę zerową, reszty nie są niezależne.
 
-Ostatecznie stwierdzamy, że zachodzi autokorelacja reszt.
+```{r}
+pvals <- cbind(c("Test", "Serii", "Durbina-Watsona", "Breuscha-Godfreya", "Ljunga-Boxa"), c("P-value",runstest, dwtest, bgtest, lbox))
+```
+
+
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+Jak widać z powyższej tabelki, w każdym z tych czterech testów p-value było praktycznie równe zero, zatem odrzucamy hipotezy o losowości, braku autokorelacji i niezależności reszt.
+
+- Wykres ACF (funkcji autokorelacji)
+
+```{r test ACF - korelacja MCD}
+acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
+```
+
+Również z wykresu funkcji ACF możemy wyciągnąć podobne wnioski. Dla opóźnień do rzędu 25 obserwacje nie mieszczą się w niebieskich przerywanych liniach - wnioskujemy, że pojawia się autokorelacja.
+
+
+
+
+Ostatecznie na podstawie testów oraz wykresu ACF stwierdzamy, że zachodzi autokorelacja reszt.
 
 ### Stacjonarność
 
@@ -467,12 +495,31 @@ kpss <- kpss.test(mcd)$p.value
 kpsst <- kpss.test(mcd, null = "Trend")$p.value 
 ```
 
+```{r}
+pvals <- cbind(c("Test", "ADF", "KPSS", "KPSS, null = Trend"), c("P-value", adf, "<0.01", "<0.01") )
+```
+
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+
 Po wykonaniu testów otrzymujemy wniosek, że szereg nie jest stacjonarny, ani stacjonarny wobec trendu.
 
 ```{r testy stacjonarność - różnicowanie MCD}
 adf2 <- adf.test(diff(mcd, differences = 1))$p.value
 kpss2 <- kpss.test(diff(mcd, differences = 1))$p.value 
 kpsst2 <- kpss.test(diff(mcd, differences = 1), null = "Trend")$p.value
+```
+
+```{r}
+pvals <- cbind(c("Test", "ADF", "KPSS", "KPSS, null = Trend"), c('P-value', "<0.01", ">0.1", ">0.1"))
+```
+
+```{r resluts = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
 ```
 
 Po zróżnicowaniu 1 raz, szereg jest zarówno stacjonarny, jak i TS.
@@ -485,7 +532,7 @@ Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`, co zgadz
 
 ### ARIMA
 
-Nasz szereg jest niestacjonarny, więc spróbujemy do niego dopasować model ARIMA.
+Szereg jest niestacjonarny, więc spróbujemy do niego dopasować model ARIMA.
 
 ```{r auto arima MCD}
 
@@ -531,19 +578,10 @@ gdzie $\epsilon_t \sim N(0, 4.176)$.
 
 #### Testy na resztach modelu ARIMA
 
-Dla reszt otrzymanego modelu ARIMA można przeprowadzić testy na jednorodność wariancji oraz normalność rozkładu. Tak jak poprzednio, posłużymy się testami Breuscha-Pagana, Goldfelda-Quandta i Harrisona-McCabe'a dla zbadania jednorodności reszt oraz Kołmogorowa-Smirnova, Lillieforsa-Smirnova, Shapiro-Wilka i Andersona-Darlinga dla zbadania normalności.
+Dla reszt otrzymanego modelu ARIMA można badać skorelowanie oraz normalność rozkładu. Tak jak poprzednio, posłużymy się testami Kołmogorowa-Smirnova, Lillieforsa-Smirnova, Shapiro-Wilka i Andersona-Darlinga dla zbadania normalności.
 
-NIE WIEM CZEMU, ALE TESTY NA JEDNORODNOŚĆ NIE CHCĄ MI PÓJŚĆ, NIE MAM JUŻ SIŁY OGARNIAĆ CO MU NIE PASUJE.
 
-```{r}
-#library(car)
-#leveneTest(as.numeric(mcd_arima$fitted))
-#bptest(mcd_arima)
-#gqtest(mcd_arima)
-#hmctest(mcd_arima)
-```
 
-- Normalność
 
 ```{r}
 par(mfrow = c(1,3))
@@ -560,22 +598,48 @@ curve(pnorm(x,0, sd = sd(mcd_arima$residuals)), add = T, lwd = 3, col = 2)
 par(mfrow = c(1,1))
 ```
 
-Z wykresu gęstości rozkładu reszt można wnioskować, że prawdopodobnie ten rozkład charakteryzuje się dużą kurtozą, co powoduje jego "wyciągnięcie" w górę, natomiast z wykresu kwantylowego jasno wynika, że rozkład nie może być normalny. 
+Z wykresu gęstości rozkładu reszt można wnioskować, że prawdopodobnie ten rozkład charakteryzuje się dodatnią kurtozą, co powoduje jego "wyciągnięcie" w górę, natomiast z wykresu kwantylowego jasno wynika, że rozkład nie może być normalny. 
 
 ```{r}
-ks.test(x = mcd_arima$residuals, y = "pnorm", mean = 0, sd = sd(mcd_arima$residuals))
-lillie.test(mcd_arima$residuals)
-shapiro.test(mcd_arima$residuals)
-ad.test(mcd_arima$residuals)
+kstest <- ks.test(x = mcd_arima$residuals, y = "pnorm", mean = 0, sd = sd(mcd_arima$residuals))$p.value
+lillie <- lillie.test(mcd_arima$residuals)$p.value
+shapiro <- shapiro.test(mcd_arima$residuals)$p.value
+adtest <- ad.test(mcd_arima$residuals)$p.value
+pvals <- cbind(c("Test", "Kołmogorowa-Smirnova", "Kołmogorowa-Lillieforsa", 
+                 "Shapiro-Wilka", "Andersona-Darlinga"),
+               c("P-value", kstest, lillie, shapiro, adtest))
 ```
 
-Wszystkie testy jednoznacznie każą odrzucić hipotezę o normalności rozkładu reszt modelu ARIMA, co potwierdza wnioski, które nasuwają się patrząc na wykresy.
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+
+
+Wszystkie testy jednoznacznie każą odrzucić hipotezę o normalności rozkładu reszt modelu ARIMA, co potwierdza wnioski, które nasuwają się przy analizie wykresów.
+
+
+```{r}
+tsdiag(mcd_arima)
+```
+
+Na pierwszym wykresie widać, że rozrzut reszt to około od -4 do 4.
+
+Na drugim wykresie można zauważyć brak autokorelacji - kolejne opóźnienia mieszczą się w przerywanych niebieskich liniach.
+
+Na ostatnim wykresie mamy zaznaczone wartości p-value z testu Ljunga-Boxa dla reszt. Są one powyżej poziomu istotności (zanzaczonego także niebieską przerywaną linią), zatem zależności między resztami nie są istotne statystycznie.
+
+Na podstawie powyższych wykresów możemy przypuszczać, że nie zachodzi skorelowanie reszt.
+
 
 ### Prognozowanie
 
 #### Metoda dryftu
 
-Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody dryftu, będącej odmianą metody naiwnej. Dzięki niej można zaobserwować trend. 
+Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody dryftu, będącej odmianą metody naiwnej.  
+
+Metoda dryftu polega na połączeniu linią prostą pierwszej i ostatniej obserwacji. Przedłużenie tej prostej jest prognozą. Zatem ta metoda może być niedokładna, pozwala jedynie zaobserwować przybliżony trend.
 
 ```{r}
 prognoza <- rwf(mcd, drift = T, h  = 30)
@@ -610,14 +674,19 @@ funkcja <- function(t){
 }
 t2 <- 503:520
 plot(mcd, type = "l")
-lines(t2, funkcja(t2))
+lines(t2, funkcja(t2), col = 2)
 
 ```
 
+Model trzeciego stopnia okazuje się niewystarczający do prognoz, ponieważ funkcja trzeciego stopnia była w tym miejscu malejąca, a notowania firmy zaczęły wzrastać.
 
 ### Podsumowanie analizy notowań McDonald's
 
-Zrobiliśmy analizę. Nie umiemy jej zinterpretować. Jest fajnie.
+Do danych o notowaniach firmy McDonald's spróbowaliśmy dobrać dwa rodzaje modeli: wielomianowy oraz ARIMA. Mamy następujące wnioski:
+
+- z modeli wielomianowych za najlepszy uznaliśmy model trzeciego stopnia. W tym modelu $R^2$ wynosiło około 90%, wariancja reszt nie była jednorodna, rozkład różnił się od normalnego, reszty były skorelowane.
+
+- z modeli typu ARIMA najlepiej dopasowany okazał się model ARIMA(0, 1, 0). Reszty tego modelu nie mają rozkładu normalnego. Nie stwierdziliśmy autokorelacji reszt.
 
 ## Starbucks
 
