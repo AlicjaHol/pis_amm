@@ -21,23 +21,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F, dev = "cairo_pdf")
 ```
 
-# Matylda!! (to do, to do, to do to do to do to doooooooo)
 
-- estetycznie można trochę poprawić, np. jak są te testy kpss i inne, to na razie robiłam tak, żeby wyświetlało ten domyślny output, może zamiast tego zrób tak jak Ty robiłaś w testach, że zapisać p-value do zmiennej i opisać? i popatrz jak wyglądają wykresy, szczególnie w pdf, może coś nie wygląda tak dobrze jak się nam wydawało, np tytuły się nie mieszczą, albo coś jest za bardzo ściśnięte, np wiem że te wykresy dla wielomianu 4 stopnia z nieznanych dla mnie przyczyn strasznie odwalają w pdf
-
-- jeżeli nadal coś się nie zgadza z tą kolejnością co Kozłowski proponował, to możesz poprzestawiać
-
-- co do opisów firm - ze Starbucksa trzeba wywalić zdjęcia bo dupnie wyglądają w pdf. I nie wiem czy ewentualnie z neta nie skopiować ze dwa zdania więcej do każdego, bo jakoś blado. spadliśmy już do 44 stron także jest coraz lepiej :) a jak wywalimy rysunki to jeszcze kolejne 3-4 strony pójdą
-
-- sprawdź, jak wyglądają tabelki w pdfie - czy na pewno każda się wyświetla dokładnie gdzie ma być. Jeśli nie, to np dla tabelek robionych poprzez `kable_styling` można dodawać parametry: ` position = 'center'`, `latex_options = "HOLD_position"` i powinny się trzymać swojego miejsca
-
-- za Chiny ludowe nie wiem jak robić jakieś prognozy czy cokolwiek... bo ten holt winters to chyba tylko dla sezonowych idzie. zobacz czy coś się da, a jak nie to usuwaj to gadowstwo.
-
-- co do ARIMY - opisałam tak, jak na laborkach robiliśmy, zobacz czy z tego modelu da się wyciągnąć reszty i robić na nich testy. jeśli się da, to zrób te testy
-
-- myślałam żeby na koniec każdej z tych firm zrobić takie podsumowanie - że np dla McDonalda z modelów wielomianowych najlepszy był taki i taki, jego reszty spełniają/nie spełniają cośtam, oprócz tego dopasowaliśmy model ARIMA taki śmaki, jego reszty cośtam cośtam... jakieś takie ładne sratatata na zakończenie
-
-- pracuj przede wszystkim nad McDonaldem, potem Marcin spisze do Starbucksa. Chociaż tam też oczywiście możesz coś zacząć żeby mu ułatwić.
 
 # Wstęp
 
