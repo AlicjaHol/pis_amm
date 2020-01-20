@@ -5,13 +5,13 @@ author: "Alicja Hołowiecka, Matylda Jankowska, Marcin Dziadosz"
 date: "23 12 2019"
 output:
   
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
   html_document:
     theme: united
     toc: yes
     toc_depth: 4
-  pdf_document:
-    toc: yes
-    toc_depth: '4'
   lang: pl
 editor_options:
   chunk_output_type: console
@@ -713,7 +713,7 @@ Na rysunku możemy zaobserwować trend rosnący.
 ### Wydzielanie trendu
 Wydzielamy część deterministyczną. Zastosujemy metody średnich ruchomych (prostą i wykładniczą).
 
-### Ruchoma średnia
+#### Ruchoma średnia
 Skorzystamy z napisanej wcześniej funkcji `ruchoma`. Narysujmy wykresy dla kilku parametrów `m`.
 
 ```{r ruchoma SBUX}
@@ -727,7 +727,7 @@ par(mfrow=c(1,1))
 
 Wraz ze wzrostem parametru `m` otrzymujemy bardziej wygładzony wykres, ale niestety mniej dokładny.
 
-### Metoda wykładniczych wag ruchomej średniej
+#### Metoda wykładniczych wag ruchomej średniej
 
 ```{r wykładnicza SBUX}
 par(mfrow=c(2,2))
@@ -742,7 +742,7 @@ Wraz ze wzrostem parametru $\eta$ uzyskujemy bardziej wygładzony wykres, ale mn
 
 ### Dopasowanie wielomianu
 
-### Metoda różnicowa
+#### Metoda różnicowa
 
 ```{r różnicowanie - rysunki SBUX}
 par(mfrow = c(2, 3))
@@ -858,27 +858,39 @@ par(mfrow=c(1,1))
 
 ### Testy na resztach modelu
 
-### Jednorodność wariancji
+#### Jednorodność wariancji
 
-- Test `Breuscha-Pagana`
+- Test Breuscha-Pagana
 
 ```{r test BP SBUX}
 pv1 <- bptest(mod3)$p.value
 ```
 
-- Test `Goldfelda-Quandta`
+- Test Goldfelda-Quandta
 
 ```{r test GQ SBUX}
 pv2 <- gqtest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
-- Test `Harrisona-McCabe'a`
+- Test Harrisona-McCabe'a
 
 ```{r test HMC SBUX}
 pv3 <- hmctest(mod3, order.by = ~fitted(mod3))$p.value
 ```
 
-### Normalność
+```{r}
+pvals <- cbind(c("Test", "Breusha-Pagana", "Goldfelda-Quandta", "Harrisona-McCabe'a"), c('P-value', pv1, pv2, pv3))
+```
+
+
+```{r results = 'asis'}
+kable(pvals)%>%
+  kable_styling(full_width = T)
+```
+
+Testy jednoznacznie wskazują, że należy odrzucić hipotezę o jednorodności wariancji.
+
+#### Normalność
 
 ```{r wykresy normalności SBUX}
 plot(density(mod3$residuals), main = "Wykres gęstości \n rozkładu reszt", 
@@ -896,21 +908,32 @@ curve(pnorm(x, 0, sd(mod3$residuals)), add = T, col = 2, lwd =2)
 Wykres gęstości rozkładu reszt bardzo znacząco różni się od gęstości rozkładu normalnego. Widać, że rozkład jest co najmniej dwumodalny i ma zbyt silną asymetrię prawostronną. Na wykresie kwantylowym widać znaczące odchyłki od linii kwantylowej. Podobne zjawisko można zaobserwować na wykresie dystrybuanty empirycznej.
 
 ```{r testy normalności SBUX}
-ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))
-lillie.test(mod3$residuals) 
-shapiro.test(mod3$residuals) 
-ad.test(mod3$residuals)
+kstest <- ks.test(x = mod3$residuals, y = "pnorm", mean = 0, sd = sd(mod3$residuals))$p.value
+lillie <- lillie.test(mod3$residuals)$p.value 
+shapiro <- shapiro.test(mod3$residuals)$p.value 
+adtest <- ad.test(mod3$residuals)$p.value
 ```
+
+```{r}
+pvals <- cbind(c("Test", "Kołmogorowa-Smirnova", "Kołmogorowa-Lillieforsa", "Shapiro-Wilka", "Andersona-Darlinga"), c("P-value", kstest, lillie, shapiro, adtest))
+```
+
+```{r}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
 
 W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipotezę o rozkładzie normalnym.
 
-### Autokorelacja
+#### Autokorelacja
 
 - Test serii
 
 ```{r losowość reszt SBUX}
 Reszty <- mod3$residuals
 runs.test(Reszty, threshold = 0, plot = T)
+runstest <- runs.test(Reszty, threshold = 0, plot = F)$p.value
 ```
 
 P-value jest bliskie 0, odrzucamy hipotezę zerową o losowości reszt. Wykres także wskazuje na skorelowanie reszt.
@@ -927,6 +950,26 @@ dwtest <- dwtest(mod3, order.by = ~t)$p.value
 bgtest <- bgtest(mod3, order.by = ~t, order = 3)$p.value
 ```
 
+- Test Ljunga-Boxa
+
+```{r box-ljung SBUX}
+lbox <- Box.test(mod3$residuals, type = "Ljung-Box")$p.value
+```
+
+
+
+
+```{r}
+pvals <- cbind(c("Test", "Serii", "Durbina-Watsona", "Breuscha-Godfreya", "Ljunga-Boxa"), c("P-value", runstest, dwtest, bgtest, lbox))
+```
+
+```{r}
+kable(pvals)%>%
+  kable_styling(full_width = T)
+```
+
+W każdym z powyższych testów p-value było praktycznie równe 0.
+
 - Wykres ACF (funkcji autokorelacji)
 
 ```{r test ACF - korelacja SBUX}
@@ -935,33 +978,48 @@ acf(mod3$residuals, main = "Wykres funkcji autokorelacji")
 
 Słupki nie mieszczą się w niebieskim "pasku", zatem prawdopodobnie ma miejsce autokorelacja.
 
- Wykres PACF (cząstkowej funkcji autokorelacji)
 
-```{r test PACF SBUX}
-pacf(mod3$residuals, main = "Cząstkowa funkcja autokorelacji")
-```
+Na podstawie testów oraz wykresu ACF wnioskujemy, że reszty z modelu `mod3` są skorelowane.
 
-- Test Ljunga-Boxa
 
-```{r box-ljung SBUX}
-lbox <- Box.test(mod3$residuals, type = "Ljung-Box")$p.value
-```
 
 ### Stacjonarność
 
 ```{r stacjonarność - testy SBUX}
-adf.test(sbux)
-kpss.test(sbux)
-kpss.test(sbux, null = "Trend")
+adf <- adf.test(sbux)$p.value
+kpss <- kpss.test(sbux)$p.value
+kpsst <- kpss.test(sbux, null = "Trend")$p.value
 ```
+
+
+```{r}
+pvals <- cbind(c("Test", "ADF", "KPSS", "KPSS, null = Trend"), c("P-value", adf, "<0.01" , "<0.01"))
+```
+
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
 
 Szereg nie jest ani stacjonarny ani TS.
 
 ```{r stacjonarność - testy po zróżnicowaniu SBUX}
-adf.test(diff(sbux, differences = 1)) 
-kpss.test(diff(sbux, differences = 1))
-kpss.test(diff(sbux, differences = 1), null = "Trend") 
+adf2 <- adf.test(diff(sbux, differences = 1))$p.value 
+kpss2 <- kpss.test(diff(sbux, differences = 1))$p.value
+kpsst2 <- kpss.test(diff(sbux, differences = 1), null = "Trend")$p.value 
 ```
+
+```{r}
+pvals <- cbind(c("Test", "ADF", "KPSS", "KPSS, null = Trend"), c("P-value", "<0.01", ">0.1", ">0.1"))
+
+```
+
+```{r results='asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
 
 Po zróżnicowaniu rzędu 1 szereg jest zarówno stacjonarny jak i TS.
 
