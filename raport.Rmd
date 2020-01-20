@@ -39,11 +39,11 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F, dev = "cairo_pdf")
 
 - pracuj przede wszystkim nad McDonaldem, potem Marcin spisze do Starbucksa. Chociaż tam też oczywiście możesz coś zacząć żeby mu ułatwić.
 
-## Wstęp
+# Wstęp
 
 W tym raporcie przeanalizujemy dwa szeregi czasowe: notowania firm McDonald's oraz Starbucks z okresu dwóch lat (od początku 2018 do końca 2019). Na potrzeby oceny w raporcie pojawia się nie tylko sama analiza, ale też wszystkie polecenia w języku `R`, jakich używaliśmy w jej celu.
 
-## Wczytanie bibliotek
+# Wczytanie bibliotek
 
 Na początek wczytamy wszystkie potrzebne biblioteki. Biblioteka `tseries` przyda nam się m. in. do wczytania danych oraz wykonania testów na stacjonarność szeregu. Z pakietu `randtests` skorzystamy przy testach na losowość reszt. W bibliotece `nortest` znajduje się wiele testów na normalność. Dzięki paczce `lmtest` utworzymy modele wielomianowe różnego stopnia i zbadamy ich dopasowanie. W bibliotece `forecast` są m. in. funkcje dotyczące modeli ARIMA. Pakiety `stargazer`, `tables` i `kableExtra` pozwolą nam estetycznie wyświetlać tabele.
 
@@ -59,13 +59,13 @@ library(tidyverse)
 library(tables)
 ```
 
-## McDonald's
+# McDonald's
 
-### Opis firmy
+## Opis firmy
 
 McDonald's to największa na świecie sieć restauracji szybkiej obsługi. Obejmuje ona ponad 30 tys. restauracji, każdego dnia obsługujących ponad 46 mln osób w 119 krajach. Wartość marki McDonald's szacuje się na 24,7 mld dolarów.
 
-### Wczytanie danych i rysunki
+## Wczytanie danych i rysunki
 
 Dane pobieramy z `yahoo finance` za pomocą funkcji `get.hist.quote` i zamieniamy na typ numeryczny.
 
@@ -83,11 +83,11 @@ plot(mcd, type = "l", xlab = "Indeks notowań", ylab = "USD", main = "Notowania 
  
 Na rysunku w ciągu tych dwóch lat wyraźnie widać trend rosnący.
 
-### Wydzielanie trendu
+## Wydzielanie trendu
 
 Spróbujemy wydzielić część deterministyczną. Do tego celu posłużymy się metodami średnich ruchomych (prostą i wykładniczą).
 
-#### Ruchoma średnia
+### Ruchoma średnia
 
 Wykorzystamy metody ruchomych średnich, aby wygładzić szereg i zaobserwować ogólne trendy. Metoda średniej ruchomej ma na celu zmniejszenie rozrzutu razy $m+1$. 
 
@@ -124,7 +124,7 @@ par(mfrow = c(1, 1))
 
 Jak widać, im większy parametr `m` przyjmiemy, tym bardziej wygładzony wykres uzyskujemy, ale też mniej dokładny.
 
-#### Metoda wykładniczych wag ruchomej średniej
+### Metoda wykładniczych wag ruchomej średniej
 
 W metodzie ruchomej średniej obserwacje starsze i nowsze mają taką samą wagę, dlatego ta metoda jest mało dokładna. Skorzystamy teraz z dokładniejszej metody wykładniczych wag ruchomej średniej.
 
@@ -165,9 +165,9 @@ par(mfrow = c(1, 1))
 
 Podobnie jak w przypadku prostej metody średniej ruchomej - im większy parametr $\eta$, tym bardziej wygładzony wykres, ale i mniejsza dokładność. Jednakże, dokładność jest i tak większa niż w przypadku prostej metody ruchomej średniej.
 
-### Dopasowanie wielomianu
+## Dopasowanie wielomianu
 
-#### Metoda różnicowa
+### Metoda różnicowa
 
 Za pomocą metody różnicowej sprawdzimy, jaki stopień wielomianu byłby najbardziej odpowiedni.
 
@@ -190,7 +190,7 @@ Spróbujemy do danych dopasować wielomian stopnia 1, 2, 3 i 4.
 t <- 1:length(mcd)
 ```
 
-#### Dopasowanie modelu liniowego
+### Dopasowanie modelu liniowego
 
 ```{r model liniowy MCD}
 
@@ -214,7 +214,7 @@ abline(h=0)
 par(mfrow = c(1, 1))
 ```
 
-#### Dopasowanie wielomianem drugiego stopnia
+### Dopasowanie wielomianem drugiego stopnia
 
 Teraz stworzymy model wielomianowy drugiego stopnia.
 
@@ -242,7 +242,7 @@ par(mfrow = c(1, 1))
 
 Model kwadratowy zachowuje się bardzo podobnie jak model liniowy.
 
-#### Dopasowanie wielomianem trzeciego stopnia
+### Dopasowanie wielomianem trzeciego stopnia
 
 Jako kolejny zbudowany zostanie model wielomianowy trzeciego stopnia.
 
@@ -271,7 +271,7 @@ par(mfrow = c(1, 1))
 
 Widać, że reszty modelu mają mniejszy rozrzut niż poprzednio - teraz mamy skalę od -15 do 15, a wcześniej było od -20 do 20.
 
-#### Dopasowanie wielomianem czwartego stopnia
+### Dopasowanie wielomianem czwartego stopnia
 
 ```{r czwarty stopień MCD}
 mod4 <- lm(mcd~t+I(t^2)+I(t^3)+I(t^4))
@@ -295,7 +295,7 @@ par(mfrow=c(1,1))
 
 W modelu wielomianowym czwartego stopnia współczynnik przy $t^3$ jest nieistotny statystycznie, ale nie możemy go usunąć, ponieważ efekt wyższego rzędu ($t^4$) jest istotny. $R^2$ wynosi około 91%, więc niewiele się różni od modelu wielomianowego 3 stopnia. Reszty także znajdują się w podobnym przedziale jak w poprzednim modelu. Model z $t^4$ niewiele się różni od tego z $t^3$, dlatego do dalszych badań wykorzystamy model wielomianowy 3 stopnia.
 
-### Testy na resztach modelu
+## Testy na resztach modelu
 
 Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz sprawdzimy, czy reszty tego modelu spełniają założenia:
 
@@ -306,7 +306,7 @@ Do danych dobraliśmy wcześniej model wielomianowy trzeciego stopnia. Teraz spr
 - losowość
 
 
-#### Jednorodność wariancji
+### Jednorodność wariancji
 
 Aby zbadać czy jednorodność reszt posłużymy się kilkoma popularnymi testami.
 
@@ -365,7 +365,7 @@ Z powyższej tabeli widać, że testy Breuscha-Pagana oraz Harrisona-McCabe'a od
 
 Biorąc pod uwagę uzyskane wyniki, należy przyjąć, że reszty z modelu trzeciego stopnia nie są homoskedastyczne.
 
-#### Normalność
+### Normalność
 
 ```{r wykres gęstości normalny MCD}
 par(mfrow = c(1, 3))
@@ -405,7 +405,7 @@ kable(pvals) %>%
 
 Z testów Kołmogorowa-Lillieforsa, Shapiro-Wilka oraz Andersona-Darlinga wynika, że musimy odrzucić hipotezę o normalności rozkładu reszt (dla testu Kołmogorowa-Smirnova nie było podstaw do odrzucenia). Jeżeli chodzi o wykresy, to brak normalności najbardziej widać na wykresie gęstości. Na drugim wykresie (z linią kwantylową) reszty najbardziej odstają od rozkładu normalnego na początku i na końcu. Dystrybuanta empiryczna jest zbliżona do dystrybuanty rozkładu normalnego.
 
-#### Autokorelacja
+### Autokorelacja
 
 - Test serii
 
@@ -471,7 +471,7 @@ Również z wykresu funkcji ACF możemy wyciągnąć podobne wnioski. Dla opóź
 
 Ostatecznie na podstawie testów oraz wykresu ACF stwierdzamy, że zachodzi autokorelacja reszt.
 
-### Stacjonarność
+## Stacjonarność
 
 Zbadamy, czy szereg jest stacjonarny albo TS (trend stationary).
 
@@ -530,7 +530,7 @@ n <- ndiffs(mcd)
 
 Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`, co zgadza się z wcześniejszymi wnioskami.
 
-### ARIMA
+## ARIMA
 
 Szereg jest niestacjonarny, więc spróbujemy do niego dopasować model ARIMA.
 
@@ -576,7 +576,7 @@ W takim razie nasz szereg można by zapisać jako:
 $$\Delta\varepsilon_t=\epsilon_t$$
 gdzie $\epsilon_t \sim N(0, 4.176)$.
 
-#### Testy na resztach modelu ARIMA
+### Testy na resztach modelu ARIMA
 
 Dla reszt otrzymanego modelu ARIMA można badać skorelowanie oraz normalność rozkładu. Tak jak poprzednio, posłużymy się testami Kołmogorowa-Smirnova, Lillieforsa-Smirnova, Shapiro-Wilka i Andersona-Darlinga dla zbadania normalności.
 
@@ -633,9 +633,9 @@ Na ostatnim wykresie mamy zaznaczone wartości p-value z testu Ljunga-Boxa dla r
 Na podstawie powyższych wykresów możemy przypuszczać, że nie zachodzi skorelowanie reszt.
 
 
-### Prognozowanie
+## Prognozowanie
 
-#### Metoda dryftu
+### Metoda dryftu
 
 Ponieważ badany szereg czasowy nie wykazuje sezonowości, nie możemy zatem przeprowadzić predykcji metodą Holta-Wintersa. Zamiast tego użyjemy metody dryftu, będącej odmianą metody naiwnej.  
 
@@ -663,7 +663,7 @@ lines(t1, prognoza, col = 3, lwd = 2)
 
 Z racji braku sezonowości, prognoza nie uwzględnia wahań, a jedynie ogólnie występujący trend. Z tego względu jest dość niedokładna i bardziej wiarygodne wyniki można uzyskać prognozując na krótsze odcinki czasu. Widać to z porównania powyższych wykresów - nachylenie linii prognozy, biorącej pod uwagę wszystkie wartości notowań jest mniejsze i nie uwzględnia istotnych zmian, które zaszły pomiędzy pierwszym a ostatnim notowaniem. 
 
-#### Przewidywania z modelu
+### Przewidywania z modelu
 
 Próbujemy przewidywać z modelu wielomianowego trzeciego stopnia.
 
@@ -680,7 +680,7 @@ lines(t2, funkcja(t2), col = 2)
 
 Model trzeciego stopnia okazuje się niewystarczający do prognoz, ponieważ funkcja trzeciego stopnia była w tym miejscu malejąca, a notowania firmy zaczęły wzrastać.
 
-### Podsumowanie analizy notowań McDonald's
+## Podsumowanie analizy notowań McDonald's
 
 Do danych o notowaniach firmy McDonald's spróbowaliśmy dobrać dwa rodzaje modeli: wielomianowy oraz ARIMA. Mamy następujące wnioski:
 
@@ -688,13 +688,13 @@ Do danych o notowaniach firmy McDonald's spróbowaliśmy dobrać dwa rodzaje mod
 
 - z modeli typu ARIMA najlepiej dopasowany okazał się model ARIMA(0, 1, 0). Reszty tego modelu nie mają rozkładu normalnego. Nie stwierdziliśmy autokorelacji reszt.
 
-## Starbucks
+# Starbucks
 
-### Opis firmy
+## Opis firmy
 
 Starbucks Corporation – największa na świecie sieć kawiarni. Została założona 30 marca 1971 w Seattle w stanie Waszyngton.
 
-### Wczytanie danych i rysunki
+## Wczytanie danych i rysunki
 
 ```{r wczytanie danych SBUX}
 sbux<- get.hist.quote(instrument = "SBUX", provider = "yahoo",
@@ -710,10 +710,10 @@ plot(sbux, type = "l", xlab = "Indeks notowań", ylab = "USD", main = "Notowania
 
 Na rysunku możemy zaobserwować trend rosnący.
 
-### Wydzielanie trendu
+## Wydzielanie trendu
 Wydzielamy część deterministyczną. Zastosujemy metody średnich ruchomych (prostą i wykładniczą).
 
-#### Ruchoma średnia
+### Ruchoma średnia
 Skorzystamy z napisanej wcześniej funkcji `ruchoma`. Narysujmy wykresy dla kilku parametrów `m`.
 
 ```{r ruchoma SBUX}
@@ -727,7 +727,7 @@ par(mfrow=c(1,1))
 
 Wraz ze wzrostem parametru `m` otrzymujemy bardziej wygładzony wykres, ale niestety mniej dokładny.
 
-#### Metoda wykładniczych wag ruchomej średniej
+### Metoda wykładniczych wag ruchomej średniej
 
 ```{r wykładnicza SBUX}
 par(mfrow=c(2,2))
@@ -740,9 +740,9 @@ par(mfrow=c(1,1))
 
 Wraz ze wzrostem parametru $\eta$ uzyskujemy bardziej wygładzony wykres, ale mniejszą dokładność. Jest ona jednak większa niż w przypadku prostej metody ruchomej średniej.
 
-### Dopasowanie wielomianu
+## Dopasowanie wielomianu
 
-#### Metoda różnicowa
+### Metoda różnicowa
 
 ```{r różnicowanie - rysunki SBUX}
 par(mfrow = c(2, 3))
@@ -762,7 +762,7 @@ par(mfrow=c(1,1))
 t <- 1:length(sbux)
 ```
 
-#### Dopasowanie modelu liniowego
+### Dopasowanie modelu liniowego
 
 ```{r model liniowy SBUX}
 mod1 <- lm(sbux~t)
@@ -785,7 +785,7 @@ abline(h=0)
 
 Na wykresie widać, że reszty mają rozrzut mniej więcej od -10 do 15. Model nie jest zbyt dokładny - na początku przeszacowuje wartości, potem zdecydowanie nie doszacowuje, na koniec znowu przeszacowuje.
 
-#### Dopasowanie wielomianu drugiego stopnia
+### Dopasowanie wielomianu drugiego stopnia
 ```{r drugi stopień SBUX}
 mod2 <- lm(sbux~t+I(t^2))
 ```
@@ -809,7 +809,7 @@ par(mfrow = c(1, 1))
 
 Wykres reszt jest bardzo podobny jak w przypadku modelu liniowego.
 
-#### Dopasowanie wielomianu trzeciego stopnia
+### Dopasowanie wielomianu trzeciego stopnia
 ```{r trzeci stopień SBUX}
 mod3 <- lm(sbux~t+I(t^2)+I(t^3))
 ```
@@ -833,7 +833,7 @@ par(mfrow=c(1,1))
 
 Reszty modelu mają mniejszy rozrzut niż w poprzednich przypadkach (od około -5 do 10).
 
-#### Dopasowanie wielomianu czwartego stopnia
+### Dopasowanie wielomianu czwartego stopnia
 
 ```{r czwarty stopień SBUX}
 mod4 <- lm(sbux~t+I(t^2)+I(t^3)+I(t^4))
@@ -856,9 +856,9 @@ par(mfrow=c(1,1))
 ```
 
 
-### Testy na resztach modelu
+## Testy na resztach modelu
 
-#### Jednorodność wariancji
+### Jednorodność wariancji
 
 - Test Breuscha-Pagana
 
@@ -890,7 +890,7 @@ kable(pvals)%>%
 
 Testy jednoznacznie wskazują, że należy odrzucić hipotezę o jednorodności wariancji.
 
-#### Normalność
+### Normalność
 
 ```{r wykresy normalności SBUX}
 plot(density(mod3$residuals), main = "Wykres gęstości \n rozkładu reszt", 
@@ -926,7 +926,7 @@ kable(pvals) %>%
 
 W każdym z testów p-value jest bardzo bliskie zero, stanowczo odrzucamy hipotezę o rozkładzie normalnym.
 
-#### Autokorelacja
+### Autokorelacja
 
 - Test serii
 
@@ -983,7 +983,7 @@ Na podstawie testów oraz wykresu ACF wnioskujemy, że reszty z modelu `mod3` s�
 
 
 
-### Stacjonarność
+## Stacjonarność
 
 ```{r stacjonarność - testy SBUX}
 adf <- adf.test(sbux)$p.value
@@ -1029,7 +1029,7 @@ n <- ndiffs(sbux)
 
 Liczba różnicowań uzyskana za pomocą funkcji `ndiffs` wynosi `r n`.
 
-### ARIMA
+## ARIMA
 
 ```{r auto-arima SBUX}
 auto.arima(sbux)
@@ -1048,17 +1048,54 @@ Model możemy zapisać w postaci:
 $$\Delta \varepsilon_t = \epsilon_t$$
 gdzie $\epsilon_t \sim N(0, 0.884)$
 
-#### Testy na resztach modelu ARIMA
+### Testy na resztach modelu ARIMA
 
 ```{r}
 tsdiag(sbux_arima)
 ```
 
+## Prognoza
+
+### Metoda dryftu
+
+```{r}
+prognoza <- rwf(sbux, drift = T, h = 30)
+prognoza <- as.data.frame(prognoza)[,1]
+plot(sbux, type = "l", main = "Prognoza z całości danych na najbliższe 30 notowań",
+xlim = c(0,515), xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+t1 <- 503:(503+length(prognoza)-1)
+lines(t1, prognoza, col = 3, lwd = 2)
+```
+
+```{r}
+prognoza <- rwf(sbux[480:500], drift = T, h = 30)
+prognoza <- as.data.frame(prognoza)[,1]
+plot(sbux, type = "l", main = "Prognoza z ostatnich 20 notowań na najbliższe 30",
+xlim = c(0,515), xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+t1 <- 503:(503+length(prognoza)-1)
+lines(t1, prognoza, col = 3, lwd = 2)
+```
+
+W przypadku danych z firmy Starbucks możemy mieć podejrzenie, że metoda dryftu nie sprawdzi się - pod sam koniec wykresu widać, że notowania zaczynają spadać. Trend wyznaczony przez metodę dryftu nie uwzględnia tego.
+
+### Przewidywania z modelu wielomianowego
+
+```{r}
+wsp <- mod3$coefficients
+funkcja <- function(t){
+wsp[1]+wsp[2]*t+wsp[3]*tˆ2+wsp[4]*tˆ3
+}
+t2 <- 503:520
+plot(sbux, type = "l", 
+     main = "Przewidywane notowania Starbucks \nna podstawie modelu wielomianowego",
+     xlab = "Indeks notowań", ylab = "USD", lwd = 2)
+lines(t2, funkcja(t2), col = 2, lwd = 2)
+```
+
+Dla Starbucksa zdecydowanie lepiej wygląda prognoza z modelu wielomianowego trzeciego stopnia - wyraźnie widać tu tendencję spadkową.
 
 
-
-
-### Podsumowanie analizy notowań Starbucks
+## Podsumowanie analizy notowań Starbucks
 
 Dla firmy Starbucks otrzymaliśmy bardzo podobne wyniki jak dla McDonald's. 
 
