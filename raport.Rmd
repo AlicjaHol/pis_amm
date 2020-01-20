@@ -1041,16 +1041,25 @@ Najlepszy model dla badanego szeregu czasowego to ARIMA(0, 1, 0).
 sbux_arima <- arima(sbux, c(0,1,0))
 ```
 
+Kryterium Akakike dla modelu ARIMA(0, 1, 0) wynosi około 1364.51.
+
+Model możemy zapisać w postaci:
+
+$$\Delta \varepsilon_t = \epsilon_t$$
+gdzie $\epsilon_t \sim N(0, 0.884)$
+
+#### Testy na resztach modelu ARIMA
+
 ```{r}
 tsdiag(sbux_arima)
 ```
 
-```{r}
-tsdisplay(residuals(sbux_arima))
-```
+
 
 
 
 ### Podsumowanie analizy notowań Starbucks
 
+Dla firmy Starbucks otrzymaliśmy bardzo podobne wyniki jak dla McDonald's. 
 
+Może to być spowodowane faktem, że obie te fimry pochodzą z segmentu gastronomicznego. Być może ich notowania są poddane podobnym wpływom i wykazują podobne zależności.
