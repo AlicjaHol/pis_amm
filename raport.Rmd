@@ -633,7 +633,7 @@ Na ostatnim wykresie mamy zaznaczone wartości p-value z testu Ljunga-Boxa dla r
 Na podstawie powyższych wykresów możemy przypuszczać, że nie zachodzi skorelowanie reszt.
 
 
-## Prognozowanie
+## Prognoza
 
 ### Metoda dryftu
 
@@ -673,7 +673,9 @@ funkcja <- function(t){
   wsp[1]+wsp[2]*t+wsp[3]*t^2+wsp[4]*t^3
 }
 t2 <- 503:520
-plot(mcd, type = "l")
+plot(mcd, type = "l",
+     main = "Przewidywane notowania McDonald's \nna podstawie modelu wielomianowego",
+     xlab = "Indeks notowań", ylab = "USD")
 lines(t2, funkcja(t2), col = 2)
 
 ```
@@ -1051,8 +1053,50 @@ gdzie $\epsilon_t \sim N(0, 0.884)$
 ### Testy na resztach modelu ARIMA
 
 ```{r}
+par(mfrow = c(1,3))
+plot(density(sbux_arima$residuals), main = "Wykres gęstości \n rozkładu reszt",
+     ylab = "Gęstość")
+curve(dnorm(x,0, sd = sd(sbux_arima$residuals)), col = 2, add = T, lwd = 3)
+
+qqnorm(sbux_arima$residuals, main = "Wykres kwantylowy", xlab = "Wartości teoretyczne", 
+       ylab = "Wartości z próby")
+qqline(sbux_arima$residuals, col = 2)
+
+plot(ecdf(sbux_arima$residuals), main = "Dystybuanta empiryczna")
+curve(pnorm(x,0, sd = sd(sbux_arima$residuals)), add = T, lwd = 3, col = 2)
+par(mfrow = c(1,1))
+```
+
+Z wykresu gęstości rozkładu reszt można wnioskować, że prawdopodobnie ten rozkład charakteryzuje się dodatnią kurtozą, co powoduje jego "wyciągnięcie" w górę, natomiast z wykresu kwantylowego jasno wynika, że rozkład nie może być normalny. 
+
+```{r}
+kstest <- ks.test(x = sbux_arima$residuals, y = "pnorm", mean = 0, sd = sd(sbux_arima$residuals))$p.value
+lillie <- lillie.test(sbux_arima$residuals)$p.value
+shapiro <- shapiro.test(sbux_arima$residuals)$p.value
+adtest <- ad.test(sbux_arima$residuals)$p.value
+pvals <- cbind(c("Test", "Kołmogorowa-Smirnova", "Kołmogorowa-Lillieforsa", 
+                 "Shapiro-Wilka", "Andersona-Darlinga"),
+               c("P-value", kstest, lillie, shapiro, adtest))
+```
+
+```{r results = 'asis'}
+kable(pvals) %>%
+  kable_styling(full_width = T)
+```
+
+
+
+Wszystkie testy jednoznacznie każą odrzucić hipotezę o normalności rozkładu reszt modelu ARIMA, co potwierdza wnioski, które nasuwają się przy analizie wykresów.
+
+```{r}
 tsdiag(sbux_arima)
 ```
+
+Reszty z modelu ARIMA mieszczą się w przedziale od -6 do 8.
+
+Na wykresie ACF dla reszt widać stanowczo, że nie występuje autokorelacja.
+
+P-values dla testu Ljunga-Boxa są wysokie, czasem nawet bliskie 1, co nie daje podstaw do odrzucenia hipotezy o niezależności reszt.
 
 ## Prognoza
 
